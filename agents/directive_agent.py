@@ -36,7 +36,7 @@ class DirectiveAgent:
         TemplateLibrary.install_built_in_templates(self.template_engine)
         
         # Initialize todo-directive bridge
-        self.todo_bridge = TodoDirectiveBridge(base_path)
+        self.todo_bridge = TodoDirectiveBridge(str(self.base_path / "directives"))
     
     def create_slug(self, content: str) -> str:
         """Create a URL-friendly slug from content"""
@@ -399,6 +399,16 @@ slug: {slug}
         output_content = output_content.replace("{{TASK_DESCRIPTION}}", todo['content'])
         output_content = output_content.replace("{{OUTPUT_CONTENT}}", "_Output pending completion of directive_")
         output_content = output_content.replace("{{ADDITIONAL_NOTES}}", "_No additional notes yet_")
+        
+        # Add required ID field to YAML frontmatter if not present
+        if output_content.startswith('---'):
+            frontmatter_end = output_content.find('---', 3)
+            if frontmatter_end != -1:
+                frontmatter = output_content[3:frontmatter_end]
+                if 'id:' not in frontmatter:
+                    # Insert the id field at the beginning of the frontmatter
+                    new_frontmatter = f"id: output-{todo['id']}\n{frontmatter}"
+                    output_content = f"---\n{new_frontmatter}---{output_content[frontmatter_end + 3:]}"
         
         # Secure file writing for output
         if self.settings.get('sanitize_inputs', True):

@@ -1,0 +1,30 @@
+{
+  "session_id": "session-1750316445",
+  "created_at": "2025-06-19T00:00:45.449843",
+  "todos": [
+    {
+      "id": "todo-test-001",
+      "content": "Create a simple hello world CLI application in Python",
+      "status": "completed",
+      "priority": "high",
+      "directive_id": "directive-1750316475-942f1de1",
+      "updated_at": "2025-06-19T00:02:28.150558"
+    },
+    {
+      "id": "todo-test-002",
+      "content": "Write unit tests for the hello world application",
+      "status": "completed",
+      "priority": "medium",
+      "directive_id": "directive-1750316475-2382d586",
+      "updated_at": "2025-06-19T00:04:13.407740"
+    }
+  ],
+  "directive_mappings": {},
+  "knowledge_base": {},
+  "completed_directives": [],
+  "dependencies": {
+    "todo-test-002": [
+      "todo-test-001"
+    ]
+  }
+}

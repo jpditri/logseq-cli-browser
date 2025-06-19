@@ -20,7 +20,13 @@ class TodoDirectiveBridge:
     def __init__(self, directives_path: str = "directives"):
         self.directives_path = Path(directives_path)
         self.context_path = self.directives_path / "context"
-        self.context_path.mkdir(exist_ok=True)
+        
+        # Ensure all necessary directories exist
+        self.context_path.mkdir(parents=True, exist_ok=True)
+        (self.directives_path / "new").mkdir(parents=True, exist_ok=True)
+        (self.directives_path / "success").mkdir(parents=True, exist_ok=True)
+        (self.directives_path / "failed").mkdir(parents=True, exist_ok=True)
+        (self.directives_path / "slow").mkdir(parents=True, exist_ok=True)
         
         # Priority mappings
         self.priority_map = {
@@ -172,13 +178,16 @@ class TodoDirectiveBridge:
         # Get priority settings
         priority_info = self.priority_map.get(todo.get('priority', 'medium'))
         
-        # Build frontmatter
+        # Build frontmatter with fields expected by engage agent
         frontmatter = {
             'id': directive_id,
-            'created_at': datetime.now().isoformat(),
+            'status': todo.get('status', 'pending'),  # Required by engage agent
+            'priority': todo.get('priority', 'medium'),  # Required by engage agent 
+            'created': datetime.now().isoformat(),  # Required by engage agent
+            'slug': f"todo-{todo['id']}",  # For logseq-style linking
             'platform': platform,
             'model': model,
-            'urgency': priority_info['urgency'],
+            'urgency': priority_info['urgency'],  # Keep for internal use
             'completion_criteria': priority_info['completion_criteria'],
             'claude_todo_id': todo['id'],
             'session_id': session_id,
@@ -187,8 +196,11 @@ class TodoDirectiveBridge:
         }
         
         # Add dependencies if this isn't the first todo
+        # For now, make each todo depend on the previous one by directive slug
         if todo_index > 0:
-            frontmatter['prerequisites'] = [f'todo-{i}' for i in range(todo_index)]
+            prev_todo = todos[todo_index - 1]
+            prev_slug = f"todo-{prev_todo['id']}"
+            frontmatter['prerequisites'] = [prev_slug]
         
         # Try to use Claude-specific template first
         try:

@@ -1,0 +1,94 @@
+{
+  "session_id": "session-1750316475",
+  "created_at": "2025-06-19T00:01:15.951504",
+  "todos": [
+    {
+      "id": "todo-test-001",
+      "content": "Create a simple hello world CLI application in Python",
+      "status": "pending",
+      "priority": "high"
+    },
+    {
+      "id": "todo-test-002",
+      "content": "Write unit tests for the hello world application",
+      "status": "pending",
+      "priority": "medium"
+    }
+  ],
+  "directive_mappings": {
+    "todo-test-001": "1750316475-942f1de1",
+    "todo-test-002": "1750316475-2382d586"
+  },
+  "knowledge_base": {},
+  "completed_directives": [
+    {
+      "directive_id": "directive-1750316475-942f1de1",
+      "directive_file": "directive-1750316475-942f1de1.md",
+      "task": "Create a simple hello world CLI application in Python",
+      "success": true,
+      "duration": 13.93049955368042,
+      "completed_at": "2025-06-19T00:02:28.150376",
+      "summary": "\u2705 Task completed successfully in 13.93s\n\nPlatform: openai\nModel: gpt-4\nTokens In: 0\nTokens Out: 0\nCost: $0.0000\n\nResponse:\nSure, here is a simple Python CLI application that just prints \"Hello, World!...",
+      "files_modified": [],
+      "metrics": {
+        "tokens_in": 0,
+        "tokens_out": 0,
+        "cost": 0.0,
+        "processing_time": "13.93s"
+      },
+      "claude_todo_id": "todo-test-001"
+    },
+    {
+      "directive_id": "todo-todo-test-001-output_1750316500",
+      "directive_file": "todo-todo-test-001-output_1750316500.md",
+      "task": "Process this directive",
+      "success": false,
+      "duration": 4.023364543914795,
+      "completed_at": "2025-06-19T00:03:16.256000",
+      "summary": "\u274c AI execution failed after 4.02s\n\nPlatform: claude\nModel: default\n\nError: All 3 attempts failed. Last error: 404 Client Error: Not Found for url: https://api.anthropic.com/v1/messages",
+      "files_modified": []
+    },
+    {
+      "directive_id": "directive-1750316475-2382d586",
+      "directive_file": "directive-1750316475-2382d586.md",
+      "task": "Write unit tests for the hello world application",
+      "success": true,
+      "duration": 10.914078950881958,
+      "completed_at": "2025-06-19T00:04:13.407607",
+      "summary": "\u2705 Task completed successfully in 10.91s\n\nPlatform: openai\nModel: gpt-4\nTokens In: 0\nTokens Out: 0\nCost: $0.0000\n\nResponse:\nSure, let's create some unit tests for our Hello World application in python....",
+      "files_modified": [],
+      "metrics": {
+        "tokens_in": 0,
+        "tokens_out": 0,
+        "cost": 0.0,
+        "processing_time": "10.91s"
+      },
+      "claude_todo_id": "todo-test-002"
+    }
+  ],
+  "dependencies": {
+    "todo-test-002": [
+      "todo-test-001"
+    ]
+  },
+  "execution_history": [
+    {
+      "timestamp": "2025-06-19T00:02:28.150770",
+      "directive_id": "directive-1750316475-942f1de1",
+      "action": "completed",
+      "duration": 13.93049955368042
+    },
+    {
+      "timestamp": "2025-06-19T00:03:16.256013",
+      "directive_id": "todo-todo-test-001-output_1750316500",
+      "action": "failed",
+      "duration": 4.023364543914795
+    },
+    {
+      "timestamp": "2025-06-19T00:04:13.407934",
+      "directive_id": "directive-1750316475-2382d586",
+      "action": "completed",
+      "duration": 10.914078950881958
+    }
+  ]
+}

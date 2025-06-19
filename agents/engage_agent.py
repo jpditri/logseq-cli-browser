@@ -103,22 +103,42 @@ class EngageAgent:
         return [p for p in prerequisites if p and p.lower() not in ['none', 'n/a', '-']]
     
     def check_prerequisites_met(self, prerequisites: List[str]) -> bool:
-        """Check if all prerequisites have been completed (exist in success directory)"""
+        """Check if all prerequisites have been completed (exist in completion directories)"""
         if not prerequisites:
             return True
         
-        completed_files = set()
-        for file_path in self.directives_success.glob("*.md"):
-            completed_files.add(file_path.stem)
+        completed_info = []
+        # Check all completion directories: success, slow, and exemplars
+        completion_dirs = [self.directives_success, self.directives_slow, self.directives_exemplars]
+        for directory in completion_dirs:
+            for file_path in directory.glob("*.md"):
+                # Parse metadata to get slug and claude_todo_id
+                metadata = self.parse_directive_metadata(file_path)
+                completed_info.append({
+                    'filename': file_path.stem,
+                    'slug': metadata.get('slug', '') if metadata else '',
+                    'claude_todo_id': metadata.get('claude_todo_id', '') if metadata else ''
+                })
         
         for prereq in prerequisites:
-            # Remove any markdown link formatting
+            # Remove any markdown link formatting and dashes
             clean_prereq = re.sub(r'\[\[(.+?)\]\]', r'\1', prereq)
-            clean_prereq = clean_prereq.strip()
+            clean_prereq = clean_prereq.strip().lstrip('- ')
             
-            if clean_prereq not in completed_files:
+            # Check if prerequisite is met by filename, slug, or claude_todo_id
+            found = False
+            for completed in completed_info:
+                if (clean_prereq == completed['filename'] or 
+                    clean_prereq == completed['slug'] or 
+                    clean_prereq == completed['claude_todo_id']):
+                    found = True
+                    break
+            
+            if not found:
+                print(f"Prerequisite not met: {clean_prereq}")
+                print(f"Available completed items: {[c['slug'] for c in completed_info]}")
                 return False
-        
+            
         return True
     
     def get_priority_score(self, priority: str) -> int:
@@ -384,6 +404,15 @@ if __name__ == "__main__":
             try:
                 with open(latest_context, 'r') as f:
                     context = json.load(f)
+                
+                # Ensure required keys exist for backward compatibility
+                if 'execution_history' not in context:
+                    context['execution_history'] = []
+                if 'completed_directives' not in context:
+                    context['completed_directives'] = []
+                if 'knowledge_base' not in context:
+                    context['knowledge_base'] = {}
+                
                 self.logger.info(f"Loaded session context: {latest_context.name}")
                 return context
             except Exception as e:
@@ -506,13 +535,14 @@ if __name__ == "__main__":
         return '\n'.join(context_parts)
 
     def update_output_file(self, directive_path: Path, success: bool, duration: float, output: str, metrics: Optional[Dict] = None):
-        """Update the corresponding output file with execution results"""
-        # Find the corresponding output file
+        """Update or create output file with execution results"""
         directive_name = directive_path.stem
         
-        # Look for output files that match this directive
+        # First, look for existing output files that match this directive
+        output_file_found = False
         for output_file in self.directives_new.glob(f"*output*.md"):
             if directive_name.split('-')[0] in output_file.name:
+                output_file_found = True
                 try:
                     content = output_file.read_text()
                     
@@ -551,6 +581,90 @@ if __name__ == "__main__":
                     break
                 except Exception as e:
                     print(f"Error updating output file {output_file}: {e}")
+        
+        # If no existing output file found, create a new one (for TODO-generated directives)
+        if not output_file_found:
+            self._create_output_file_for_directive(directive_path, success, duration, output, metrics)
+    
+    def _create_output_file_for_directive(self, directive_path: Path, success: bool, duration: float, output: str, metrics: Optional[Dict] = None):
+        """Create a new output file for TODO-generated directives"""
+        try:
+            # Get directive metadata for context
+            metadata = self.parse_directive_metadata(directive_path)
+            if not metadata:
+                return
+            
+            # Extract basic info
+            task_content = self.extract_task_content(directive_path)
+            status = "✅ Completed" if success else "❌ Failed"
+            execution_time = f"{duration:.2f}s"
+            
+            # Generate output filename
+            directive_slug = metadata.get('slug', directive_path.stem)
+            unix_timestamp = int(datetime.now().timestamp())
+            output_filename = f"{directive_slug}-output_{unix_timestamp}.md"
+            output_path = directive_path.parent / output_filename
+            
+            # Build output content with YAML frontmatter
+            frontmatter = {
+                'id': f"output-{metadata.get('id', directive_path.stem)}",
+                'slug': directive_slug,
+                'status': status,
+                'priority': metadata.get('priority', 'medium'),
+                'created': datetime.now().isoformat(),
+                'directive': f"[[{directive_path.stem}]]",
+                'tokens_in': metrics.get('tokens_in', 0) if metrics else 0,
+                'tokens_out': metrics.get('tokens_out', 0) if metrics else 0,
+                'cost': f"${metrics.get('cost', 0):.4f}" if metrics else "$0.0000",
+                'processing_time': metrics.get('processing_time', execution_time) if metrics else execution_time
+            }
+            
+            # Build content
+            content_parts = [
+                '---',
+                yaml.dump(frontmatter, default_flow_style=False).strip(),
+                '---',
+                '',
+                f"# {task_content}",
+                '',
+                "## Status",
+                f"- {status}",
+                '',
+                "## Priority",
+                f"- {metadata.get('priority', 'medium')}",
+                '',
+                "## Description", 
+                task_content,
+                '',
+                "## Directive",
+                f"- Link: [[{directive_path.stem}]]",
+                '',
+                "## Performance Metrics",
+                f"- **Tokens In**: {frontmatter['tokens_in']}",
+                f"- **Tokens Out**: {frontmatter['tokens_out']}",
+                f"- **Cost**: {frontmatter['cost']}",
+                f"- **Processing Time**: {frontmatter['processing_time']}",
+                '',
+                "## Output",
+                output,
+                '',
+                "## Notes",
+                "_Generated automatically by engage agent_",
+                '',
+                "## Execution Results",
+                f"- Status: {status}",
+                f"- Duration: {execution_time}",
+                f"- Timestamp: {datetime.now().isoformat()}"
+            ]
+            
+            # Write output file
+            output_content = '\n'.join(content_parts)
+            output_path.write_text(output_content)
+            
+            print(f"📄 Created output file: {output_filename}")
+            
+        except Exception as e:
+            print(f"Error creating output file for {directive_path}: {e}")
     
     def move_directive(self, file_path: Path, success: bool, duration: float) -> Path:
         """Move directive to appropriate status directory"""
@@ -659,8 +773,10 @@ if __name__ == "__main__":
                 
                 # Check prerequisites
                 task_content = self.extract_task_content(directive_path)
-                if self.has_unmet_prerequisites(directive_path, task_content):
-                    self.logger.info(f"Skipping {directive_path.name} - unmet prerequisites")
+                content = directive_path.read_text()
+                prerequisites = self.extract_prerequisites(content)
+                if not self.check_prerequisites_met(prerequisites):
+                    self.logger.info(f"Skipping {directive_path.name} - unmet prerequisites: {prerequisites}")
                     continue
                 
                 # Determine platform and model
