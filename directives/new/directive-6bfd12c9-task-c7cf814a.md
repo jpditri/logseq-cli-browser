@@ -1,35 +1,27 @@
 ---
-id: task-165f1c3e
+id: task-c7cf814a
 status: pending
 priority: medium
-created: 2025-06-18T23:40:52.923268
-slug: directive-901773a9
-platform: claude
-model: claude-3-sonnet
+created: 2025-06-19T00:28:03.204840
+slug: directive-6bfd12c9
 ---
 
-# Directive: Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
+# Directive: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
 
 ## Task Details
-- **ID**: task-165f1c3e
+- **ID**: task-c7cf814a
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-18T23:40:52.923268
+- **Created**: 2025-06-19T00:28:03.204840
 
 ## Prerequisites
-- [[directive-1b287b76-task-c776e413]]
-- [[directive-6bfd12c9-task-b47ea0b8]]
-- [[directive-b0c71e36-task-efb04d59]]
-
-## AI Requirements
-- **Platform**: claude
-- **Model**: claude-3-sonnet
+- [[directive-1b287b76-task-afd08992]]
 
 ## Prompt
-# Task: Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
+# Task: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
 
 ## Objective
-Complete the following task: Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
+Complete the following task: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
 
 ## Priority Level
 Medium priority
@@ -70,7 +62,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-901773a9-output_1750315252]]
+- Link to output: [[directive-6bfd12c9-output_1750318083]]
 
 ## Metadata
 - Type: Directive

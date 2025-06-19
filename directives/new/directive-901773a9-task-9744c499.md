@@ -1,33 +1,29 @@
 ---
-id: task-3374967c
+id: task-9744c499
 status: pending
 priority: medium
-created: 2025-06-18T20:40:00.016342
-slug: directive-37e37a17
-platform: claude
-model: claude-3-sonnet
+created: 2025-06-19T00:35:41.665654
+slug: directive-901773a9
 ---
 
-# Directive: find information about magic the gathering and its lore, create a pages/ directory and put lore information about the game, focus on the magic system and color pie and the concepts they represent
+# Directive: Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
 
 ## Task Details
-- **ID**: task-3374967c
+- **ID**: task-9744c499
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-18T20:40:00.016342
+- **Created**: 2025-06-19T00:35:41.665654
 
 ## Prerequisites
-- None
-
-## AI Requirements
-- **Platform**: claude
-- **Model**: claude-3-sonnet
+- [[directive-1b287b76-task-1601437d]]
+- [[directive-6bfd12c9-task-fa9ac799]]
+- [[directive-b0c71e36-task-2183c15d]]
 
 ## Prompt
-# Task: find information about magic the gathering and its lore, create a pages/ directory and put lore information about the game, focus on the magic system and color pie and the concepts they represent
+# Task: Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
 
 ## Objective
-Complete the following task: find information about magic the gathering and its lore, create a pages/ directory and put lore information about the game, focus on the magic system and color pie and the concepts they represent
+Complete the following task: Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
 
 ## Priority Level
 Medium priority
@@ -68,7 +64,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-37e37a17-output_1750304400]]
+- Link to output: [[directive-901773a9-output_1750318541]]
 
 ## Metadata
 - Type: Directive

@@ -4,6 +4,7 @@ require 'optparse'
 require 'pathname'
 require 'concurrent'
 require 'thread'
+require 'json'
 
 class ComputerCLI
   def initialize
@@ -508,6 +509,10 @@ class ComputerCLI
       show_todo_status(options)
     else
       puts "Usage: computer todo <list|sync|create|status> [options]"
+      puts "  create options:"
+      puts "    -f FILE    Input file (JSON format or plain text)"
+      puts "    -t TEXT    Todo text from command line"
+      puts "    -h         Show help"
     end
   end
   
@@ -517,8 +522,12 @@ class ComputerCLI
     OptionParser.new do |opts|
       opts.banner = "Usage: computer todo <command> [options]"
       
-      opts.on('-f', '--file FILE', 'JSON file containing Claude Code todos') do |file|
+      opts.on('-f', '--file FILE', 'File containing todos (JSON or plain text)') do |file|
         options[:file] = file
+      end
+      
+      opts.on('-t', '--text TEXT', 'Todo text from command line') do |text|
+        options[:text] = text
       end
       
       opts.on('-c', '--completed', 'Include completed todos') do
@@ -566,20 +575,37 @@ class ComputerCLI
   end
   
   def create_todos_from_file(options)
-    unless options[:file]
-      puts "❌ Todo file required. Use --file option."
+    unless options[:file] || options[:text]
+      puts "❌ Todo input required. Use --file or --text option."
       return
     end
-    
-    unless File.exist?(options[:file])
-      puts "❌ Todo file not found: #{options[:file]}"
-      return
-    end
-    
-    puts "📋 Creating directives from Claude Code todos..."
     
     directive_script = @base_path + 'agents' + 'directive_agent.py'
-    system('python3', directive_script.to_s, '--claude-todos', options[:file])
+    
+    if options[:text]
+      # Handle command line text input
+      puts "📋 Creating directives from command line text..."
+      system('python3', directive_script.to_s, '--text', options[:text])
+    else
+      # Handle file input
+      unless File.exist?(options[:file])
+        puts "❌ Todo file not found: #{options[:file]}"
+        return
+      end
+      
+      puts "📋 Creating directives from file..."
+      
+      # Check if file is JSON or plain text
+      begin
+        content = File.read(options[:file])
+        JSON.parse(content)
+        # If parsing succeeds, it's JSON
+        system('python3', directive_script.to_s, '--claude-todos', options[:file])
+      rescue JSON::ParserError
+        # If parsing fails, treat as plain text
+        system('python3', directive_script.to_s, '--file', options[:file])
+      end
+    end
   end
   
   def show_todo_status(options)

@@ -1,33 +1,27 @@
 ---
-id: task-3034c428
+id: task-fa9ac799
 status: pending
 priority: medium
-created: 2025-06-18T20:40:00.017276
-slug: directive-9f40ad69
-platform: claude
-model: claude-3-sonnet
+created: 2025-06-19T00:35:41.663402
+slug: directive-6bfd12c9
 ---
 
-# Directive: Create a detailed template/magic_color
+# Directive: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
 
 ## Task Details
-- **ID**: task-3034c428
+- **ID**: task-fa9ac799
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-18T20:40:00.017276
+- **Created**: 2025-06-19T00:35:41.663402
 
 ## Prerequisites
-- [[directive-37e37a17-task-3374967c]]
-
-## AI Requirements
-- **Platform**: claude
-- **Model**: claude-3-sonnet
+- [[directive-1b287b76-task-1601437d]]
 
 ## Prompt
-# Task: Create a detailed template/magic_color
+# Task: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
 
 ## Objective
-Complete the following task: Create a detailed template/magic_color
+Complete the following task: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
 
 ## Priority Level
 Medium priority
@@ -68,7 +62,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-9f40ad69-output_1750304400]]
+- Link to output: [[directive-6bfd12c9-output_1750318541]]
 
 ## Metadata
 - Type: Directive

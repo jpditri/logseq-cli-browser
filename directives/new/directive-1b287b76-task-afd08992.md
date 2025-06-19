@@ -1,27 +1,21 @@
 ---
-id: task-c776e413
+id: task-afd08992
 status: pending
 priority: medium
-created: 2025-06-18T23:40:52.921565
+created: 2025-06-19T00:28:03.204197
 slug: directive-1b287b76
-platform: claude
-model: claude-3-sonnet
 ---
 
 # Directive: Implement a cli interface tool to browse through a logseq pages/ directory that starts at a list of all pages and the ability to use vim-key style navigation and /pattern searching, when the cursor is on a link to another page, pressing &#x27;o&#x27; should change the view to the linked page, &#x27;b&#x27; should return to the previous page and the app should maintain an in memory list of the pages in the order they navigated to them
 
 ## Task Details
-- **ID**: task-c776e413
+- **ID**: task-afd08992
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-18T23:40:52.921565
+- **Created**: 2025-06-19T00:28:03.204197
 
 ## Prerequisites
 - None
-
-## AI Requirements
-- **Platform**: claude
-- **Model**: claude-3-sonnet
 
 ## Prompt
 # Task: Implement a cli interface tool to browse through a logseq pages/ directory that starts at a list of all pages and the ability to use vim-key style navigation and /pattern searching, when the cursor is on a link to another page, pressing &#x27;o&#x27; should change the view to the linked page, &#x27;b&#x27; should return to the previous page and the app should maintain an in memory list of the pages in the order they navigated to them
@@ -68,7 +62,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-1b287b76-output_1750315252]]
+- Link to output: [[directive-1b287b76-output_1750318083]]
 
 ## Metadata
 - Type: Directive

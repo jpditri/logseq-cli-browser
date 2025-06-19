@@ -501,6 +501,16 @@ slug: {slug}
         
         return results
     
+    def create_directives_from_text(self, text: str, platform: str = None, model: str = None) -> Dict[str, Any]:
+        """Create directives from plain text input (command line or file)"""
+        try:
+            # Use the main process_prompt method to handle text input
+            results = self.process_prompt(text, platform, model, use_llm=False)
+            return results
+        except Exception as e:
+            print(f"Error creating directives from text: {e}")
+            return {"success": False, "error": str(e)}
+    
     def _select_template_for_task(self, content: str) -> Optional[str]:
         """Select appropriate template based on task content"""
         content_lower = content.lower()
@@ -670,6 +680,8 @@ def main():
     parser.add_argument('--template', help='Template to use for directive creation')
     parser.add_argument('--list-templates', action='store_true', help='List available templates')
     parser.add_argument('--claude-todos', help='JSON file containing Claude Code todos')
+    parser.add_argument('--text', help='Todo text from command line')
+    parser.add_argument('--file', help='Plain text file containing todo prompt')
     parser.add_argument('--sync-todos', action='store_true', help='Sync Claude todos with directive status')
     parser.add_argument('--list-todos', action='store_true', help='List todos from directives')
     parser.add_argument('--use-llm', action='store_true', help='Use LLM for prompt decomposition')
@@ -712,6 +724,29 @@ def main():
             sys.exit(0)
         except Exception as e:
             print(f"Error processing Claude todos: {e}")
+            sys.exit(1)
+    
+    # Handle plain text input from command line
+    if args.text:
+        try:
+            agent = DirectiveAgent()
+            results = agent.create_directives_from_text(args.text, args.platform, args.model)
+            sys.exit(0)
+        except Exception as e:
+            print(f"Error processing text input: {e}")
+            sys.exit(1)
+    
+    # Handle plain text file input
+    if args.file:
+        try:
+            with open(args.file, 'r') as f:
+                text_content = f.read().strip()
+            
+            agent = DirectiveAgent()
+            results = agent.create_directives_from_text(text_content, args.platform, args.model)
+            sys.exit(0)
+        except Exception as e:
+            print(f"Error processing file input: {e}")
             sys.exit(1)
     
     if args.sync_todos:

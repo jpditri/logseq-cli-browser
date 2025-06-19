@@ -1,28 +1,22 @@
 ---
-id: task-efb04d59
+id: task-92f98614
 status: pending
 priority: medium
-created: 2025-06-18T23:40:52.922788
+created: 2025-06-19T00:28:03.205319
 slug: directive-b0c71e36
-platform: claude
-model: claude-3-sonnet
 ---
 
 # Directive: &#x27;:q&#x27; should exit the cli
 
 ## Task Details
-- **ID**: task-efb04d59
+- **ID**: task-92f98614
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-18T23:40:52.922788
+- **Created**: 2025-06-19T00:28:03.205319
 
 ## Prerequisites
-- [[directive-1b287b76-task-c776e413]]
-- [[directive-6bfd12c9-task-b47ea0b8]]
-
-## AI Requirements
-- **Platform**: claude
-- **Model**: claude-3-sonnet
+- [[directive-1b287b76-task-afd08992]]
+- [[directive-6bfd12c9-task-c7cf814a]]
 
 ## Prompt
 # Task: &#x27;:q&#x27; should exit the cli
@@ -69,7 +63,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-b0c71e36-output_1750315252]]
+- Link to output: [[directive-b0c71e36-output_1750318083]]
 
 ## Metadata
 - Type: Directive

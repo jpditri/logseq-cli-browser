@@ -685,11 +685,24 @@ if __name__ == "__main__":
             dest_dir = self.directives_failed
             status = "failed"
         
+        # Update the directive's status field before moving
+        self._update_directive_status(file_path, "completed" if success else "failed")
+        
         dest_path = dest_dir / file_path.name
         shutil.move(str(file_path), str(dest_path))
         
         print(f"📁 Moved {file_path.name} to {status}/")
         return dest_path
+    
+    def _update_directive_status(self, file_path: Path, new_status: str) -> None:
+        """Update the status field in a directive file's YAML frontmatter"""
+        try:
+            content = file_path.read_text()
+            # Update status in YAML frontmatter using regex
+            content = re.sub(r'status: .*', f'status: {new_status}', content)
+            file_path.write_text(content)
+        except Exception as e:
+            print(f"Warning: Failed to update status in {file_path}: {e}")
     
     def process_single_directive(self) -> bool:
         """Process a single directive. Returns True if a directive was processed."""

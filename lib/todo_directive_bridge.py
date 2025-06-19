@@ -57,7 +57,7 @@ class TodoDirectiveBridge:
             
             # Build directive content
             content = self._build_directive_from_todo(
-                todo, directive_id, session_id, platform, model, i, len(todos)
+                todo, directive_id, session_id, platform, model, i, len(todos), todos
             )
             
             # Write directive file
@@ -172,7 +172,7 @@ class TodoDirectiveBridge:
     
     def _build_directive_from_todo(self, todo: Dict[str, Any], directive_id: str, 
                                  session_id: str, platform: str, model: str,
-                                 todo_index: int, total_todos: int) -> str:
+                                 todo_index: int, total_todos: int, todos: List[Dict[str, Any]]) -> str:
         """Build directive content from todo"""
         
         # Get priority settings

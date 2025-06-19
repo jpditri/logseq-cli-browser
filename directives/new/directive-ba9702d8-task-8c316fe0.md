@@ -1,35 +1,27 @@
 ---
-id: task-e88bbd1b
+id: task-8c316fe0
 status: pending
 priority: medium
-created: 2025-06-18T20:40:00.018565
-slug: directive-78ae2c52
-platform: claude
-model: claude-3-sonnet
+created: 2025-06-19T00:35:49.287424
+slug: directive-ba9702d8
 ---
 
-# Directive: Ensure anything added to pages/ is in proper LogSeq interlinked format
+# Directive: Create a simple hello world script in Python
 
 ## Task Details
-- **ID**: task-e88bbd1b
+- **ID**: task-8c316fe0
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-18T20:40:00.018565
+- **Created**: 2025-06-19T00:35:49.287424
 
 ## Prerequisites
-- [[directive-37e37a17-task-3374967c]]
-- [[directive-9f40ad69-task-3034c428]]
-- [[directive-291c872b-task-7d20dd16]]
-
-## AI Requirements
-- **Platform**: claude
-- **Model**: claude-3-sonnet
+- None
 
 ## Prompt
-# Task: Ensure anything added to pages/ is in proper LogSeq interlinked format
+# Task: Create a simple hello world script in Python
 
 ## Objective
-Complete the following task: Ensure anything added to pages/ is in proper LogSeq interlinked format
+Complete the following task: Create a simple hello world script in Python
 
 ## Priority Level
 Medium priority
@@ -70,7 +62,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-78ae2c52-output_1750304400]]
+- Link to output: [[directive-ba9702d8-output_1750318549]]
 
 ## Metadata
 - Type: Directive

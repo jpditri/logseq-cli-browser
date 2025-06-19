@@ -1,0 +1,29 @@
+{
+  "session_id": "session-1750318677",
+  "created_at": "2025-06-19T00:37:57.450907",
+  "todos": [
+    {
+      "id": "todo-1",
+      "content": "Write a simple bash script to backup files",
+      "status": "pending",
+      "priority": "high"
+    },
+    {
+      "id": "todo-2",
+      "content": "Create documentation for the script",
+      "status": "pending",
+      "priority": "medium"
+    }
+  ],
+  "directive_mappings": {
+    "todo-1": "1750318677-28c7175e",
+    "todo-2": "1750318677-f82c08df"
+  },
+  "knowledge_base": {},
+  "completed_directives": [],
+  "dependencies": {
+    "todo-2": [
+      "todo-1"
+    ]
+  }
+}

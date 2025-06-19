@@ -1,34 +1,28 @@
 ---
-id: task-7d20dd16
+id: task-2183c15d
 status: pending
 priority: medium
-created: 2025-06-18T20:40:00.017905
-slug: directive-291c872b
-platform: claude
-model: claude-3-sonnet
+created: 2025-06-19T00:35:41.664616
+slug: directive-b0c71e36
 ---
 
-# Directive: md using information gathered about the colors and their meanings around information about the themes and mechanics (as the game exists now)
+# Directive: &#x27;:q&#x27; should exit the cli
 
 ## Task Details
-- **ID**: task-7d20dd16
+- **ID**: task-2183c15d
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-18T20:40:00.017905
+- **Created**: 2025-06-19T00:35:41.664616
 
 ## Prerequisites
-- [[directive-37e37a17-task-3374967c]]
-- [[directive-9f40ad69-task-3034c428]]
-
-## AI Requirements
-- **Platform**: claude
-- **Model**: claude-3-sonnet
+- [[directive-1b287b76-task-1601437d]]
+- [[directive-6bfd12c9-task-fa9ac799]]
 
 ## Prompt
-# Task: md using information gathered about the colors and their meanings around information about the themes and mechanics (as the game exists now)
+# Task: &#x27;:q&#x27; should exit the cli
 
 ## Objective
-Complete the following task: md using information gathered about the colors and their meanings around information about the themes and mechanics (as the game exists now)
+Complete the following task: &#x27;:q&#x27; should exit the cli
 
 ## Priority Level
 Medium priority
@@ -69,7 +63,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-291c872b-output_1750304400]]
+- Link to output: [[directive-b0c71e36-output_1750318541]]
 
 ## Metadata
 - Type: Directive
