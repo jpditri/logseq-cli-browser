@@ -1,2 +1,0 @@
-{"timestamp":"2025-06-19T06:31:24.527670+00:00","action":"QUARANTINE_REJECTED","success":false,"details":{"reason":"Untrusted source","source":"test_peer:localhost:8766"},"quarantine_count":0}
-{"timestamp":"2025-06-19T06:31:32.049948+00:00","action":"PROMPT_QUARANTINED","success":true,"details":{"filename":"Q-2b330865-ac9e-4bc9-a09c-0aecc275cb68.md","source":"localhost:8766","content_length":58,"content_hash":"f0cc7cf98cbe26633ee6e82f996d11354ab2352926e14dc08c7352444ac4d734"},"quarantine_count":1}
