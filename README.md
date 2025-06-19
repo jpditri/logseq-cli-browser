@@ -122,6 +122,12 @@ This is a simple, focused tool for browsing Logseq pages from the terminal. Cont
 - Better link resolution
 - Enhanced markdown parsing
 - Bug fixes and stability improvements
+- /search functionality would be nice
+- Maybe <TAB> between links
+- More advanced logseq out of the box
+- - /query
+- - Related Items (linked/unlinked)
+- Export a limited subgraph based on [[page]]s or #tags
 
 ## License
 
