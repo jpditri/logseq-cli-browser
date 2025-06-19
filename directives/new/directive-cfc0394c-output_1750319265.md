@@ -1,4 +1,4 @@
-# Create a simple hello world script in Python
+# cli.prompt
 
 ## Status
 - pending
@@ -7,7 +7,7 @@
 - medium
 
 ## Description
-Create a simple hello world script in Python
+cli.prompt
 
 ## Directive
 - Link: [[]]

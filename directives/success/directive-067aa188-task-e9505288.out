@@ -1,0 +1,18 @@
+# Sequential Processing Output
+
+Platform: openai
+Model: gpt-4o-mini
+Processing Time: 3.22s
+
+Certainly! Here’s a simple Python function to add two numbers:
+
+```python
+def add_numbers(num1, num2):
+    return num1 + num2
+
+# Example usage:
+result = add_numbers(5, 3)
+print("The sum is:", result)
+```
+
+You can call the `add_numbers` function with any two numbers, and it will return their sum.

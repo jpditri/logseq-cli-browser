@@ -758,7 +758,7 @@ if __name__ == "__main__":
             print(f"📋 {remaining} directive(s) remain (may have unmet prerequisites)")
     
     def run_batch_processing(self):
-        """Process all directives using batch APIs for maximum efficiency"""
+        """Process all directives using sequential API calls with claiming mechanism"""
         if not self.api_mode:
             print("❌ Batch processing requires API mode. Set API keys and use --api-mode flag.")
             return
@@ -775,8 +775,8 @@ if __name__ == "__main__":
         
         print(f"📋 Found {len(directive_files)} directives to process")
         
-        # Convert directives to batch requests
-        batch_requests = []
+        # Filter available directives (check prerequisites and metadata)
+        available_directives = []
         for directive_path in directive_files:
             try:
                 metadata = self.parse_directive_metadata(directive_path)
@@ -785,125 +785,153 @@ if __name__ == "__main__":
                     continue
                 
                 # Check prerequisites
-                task_content = self.extract_task_content(directive_path)
                 content = directive_path.read_text()
                 prerequisites = self.extract_prerequisites(content)
                 if not self.check_prerequisites_met(prerequisites):
                     self.logger.info(f"Skipping {directive_path.name} - unmet prerequisites: {prerequisites}")
                     continue
                 
+                available_directives.append((directive_path, metadata))
+                
+            except Exception as e:
+                self.logger.error(f"Error preparing {directive_path.name}: {e}")
+                continue
+        
+        if not available_directives:
+            print("No directives are ready for processing")
+            return
+        
+        print(f"🎯 Submitting {len(available_directives)} directives for batch processing...")
+        
+        # Process directives sequentially with claiming
+        success_count = 0
+        failed_count = 0
+        
+        for directive_path, metadata in available_directives:
+            try:
+                # Claim the directive by moving it to a processing state
+                if not self._claim_directive(directive_path):
+                    self.logger.info(f"Directive {directive_path.name} was claimed by another process")
+                    continue
+                
+                # Extract task content
+                task_content = self.extract_task_content(directive_path)
+                
                 # Determine platform and model
                 platform = metadata.get('platform', 'claude')
                 model = metadata.get('model', 'claude-3-sonnet-20240229' if platform == 'claude' else 'gpt-4')
                 
-                # Create batch request
-                request_id = directive_path.stem
-                batch_request = BatchRequest(
-                    id=request_id,
-                    directive_path=directive_path,
-                    platform=platform,
-                    model=model,
-                    prompt=task_content,
-                    metadata=metadata
-                )
-                batch_requests.append(batch_request)
+                self.logger.info(f"Processing {directive_path.name} with {platform}/{model}")
                 
-            except Exception as e:
-                self.logger.error(f"Error preparing {directive_path.name} for batch: {e}")
-                continue
-        
-        if not batch_requests:
-            print("No directives are ready for batch processing")
-            return
-        
-        print(f"🎯 Submitting {len(batch_requests)} directives for batch processing...")
-        
-        # Process in batches
-        try:
-            results = self.batch_processor.process_directives_in_batches(batch_requests)
-            
-            # Process results and move directives
-            success_count = 0
-            failed_count = 0
-            
-            for request in batch_requests:
-                request_id = request.id
-                directive_path = request.directive_path
+                # Process using individual AI API call
+                start_time = time.time()
+                response = self.ai_client.chat_completion(task_content, platform, model)
+                processing_time = time.time() - start_time
                 
-                if request_id in results:
-                    result = results[request_id]
+                success = response.get('success', False)
+                result = response.get('content', response.get('error', 'Unknown error'))
+                
+                if success:
+                    # Move to success directory
+                    success_path = self.directives_success / directive_path.name
+                    shutil.move(str(directive_path), str(success_path))
                     
-                    if result['success']:
-                        # Move to success directory
-                        success_path = self.directives_success / directive_path.name
-                        shutil.move(str(directive_path), str(success_path))
-                        
-                        # Create output file
-                        output_file = success_path.with_suffix('.out')
-                        with open(output_file, 'w') as f:
-                            f.write(f"# Batch Processing Output\n\n")
-                            f.write(f"Platform: {result['platform']}\n")
-                            f.write(f"Model: {result['model']}\n\n")
-                            f.write(result['content'])
-                        
-                        success_count += 1
-                        self.logger.info(f"✅ Batch success: {directive_path.name}")
-                        
-                        # Update session context
-                        self._update_session_context_with_directive(
-                            directive_path, True, 0.0, result['content']
-                        )
-                        
-                    else:
-                        # Move to failed directory
-                        failed_path = self.directives_failed / directive_path.name
-                        shutil.move(str(directive_path), str(failed_path))
-                        
-                        # Create error file
-                        error_file = failed_path.with_suffix('.err')
-                        with open(error_file, 'w') as f:
-                            f.write(f"# Batch Processing Error\n\n")
-                            f.write(f"Platform: {result['platform']}\n")
-                            f.write(f"Model: {result['model']}\n\n")
-                            f.write(f"Error: {result['error']}")
-                        
-                        failed_count += 1
-                        self.logger.error(f"❌ Batch failed: {directive_path.name} - {result['error']}")
-                        
-                        # Update session context
-                        self._update_session_context_with_directive(
-                            directive_path, False, 0.0, result['error']
-                        )
+                    # Create output file
+                    output_file = success_path.with_suffix('.out')
+                    with open(output_file, 'w') as f:
+                        f.write(f"# Sequential Processing Output\n\n")
+                        f.write(f"Platform: {platform}\n")
+                        f.write(f"Model: {model}\n")
+                        f.write(f"Processing Time: {processing_time:.2f}s\n\n")
+                        f.write(result)
+                    
+                    success_count += 1
+                    self.logger.info(f"✅ Success: {directive_path.name}")
+                    print(f"✅ Completed: {directive_path.name}")
+                    
+                    # Update session context
+                    self._update_session_context_with_directive(
+                        directive_path, True, processing_time, result
+                    )
+                    
                 else:
-                    # No result received - move to failed
+                    # Move to failed directory
                     failed_path = self.directives_failed / directive_path.name
                     shutil.move(str(directive_path), str(failed_path))
                     
+                    # Create error file
                     error_file = failed_path.with_suffix('.err')
                     with open(error_file, 'w') as f:
-                        f.write("# Batch Processing Error\n\nNo result received from batch processing")
+                        f.write(f"# Sequential Processing Error\n\n")
+                        f.write(f"Platform: {platform}\n")
+                        f.write(f"Model: {model}\n")
+                        f.write(f"Processing Time: {processing_time:.2f}s\n\n")
+                        f.write(f"Error: {result}")
                     
                     failed_count += 1
-                    self.logger.error(f"❌ No batch result: {directive_path.name}")
+                    self.logger.error(f"❌ Failed: {directive_path.name} - {result}")
+                    print(f"❌ Failed: {directive_path.name}")
+                    
+                    # Update session context
+                    self._update_session_context_with_directive(
+                        directive_path, False, processing_time, result
+                    )
+                
+            except Exception as e:
+                failed_count += 1
+                self.logger.error(f"❌ Processing error for {directive_path.name}: {e}")
+                print(f"❌ Error: {directive_path.name}")
+                
+                # Move to failed if it still exists
+                if directive_path.exists():
+                    failed_path = self.directives_failed / directive_path.name
+                    shutil.move(str(directive_path), str(failed_path))
+        
+        # Save updated session context
+        self._save_session_context(self.session_context)
+        
+        print(f"\n🏁 Batch Processing Complete!")
+        print(f"✅ Successful: {success_count}")
+        print(f"❌ Failed: {failed_count}")
+        print(f"📊 Total Processed: {success_count + failed_count}")
+        
+        self.logger.info(f"Batch processing complete - {success_count} success, {failed_count} failed")
+        
+        # Show remaining directives
+        remaining = len(list(self.directives_new.glob("*.md")))
+        if remaining > 0:
+            print(f"📋 {remaining} directive(s) remain (may have unmet prerequisites)")
+    
+    def _claim_directive(self, directive_path: Path) -> bool:
+        """
+        Claim a directive for processing by atomically moving it to a temporary processing location.
+        Returns True if successfully claimed, False if already claimed by another process.
+        """
+        try:
+            # Create a processing directory if it doesn't exist
+            processing_dir = self.directives_new.parent / "processing"
+            processing_dir.mkdir(exist_ok=True)
             
-            # Save updated session context
-            self._save_session_context(self.session_context)
+            # Try to atomically move the file to claim it
+            processing_path = processing_dir / directive_path.name
             
-            print(f"\n🏁 Batch Processing Complete!")
-            print(f"✅ Successful: {success_count}")
-            print(f"❌ Failed: {failed_count}")
-            print(f"📊 Total Processed: {success_count + failed_count}")
-            
-            self.logger.info(f"Batch processing complete - {success_count} success, {failed_count} failed")
-            
-            # Show remaining directives
-            remaining = len(list(self.directives_new.glob("*.md")))
-            if remaining > 0:
-                print(f"📋 {remaining} directive(s) remain (may have unmet prerequisites)")
-            
+            # Use atomic move to claim the directive
+            # If another process already claimed it, this will fail
+            try:
+                directive_path.rename(processing_path)
+                # Successfully claimed - move it back to original location for processing
+                processing_path.rename(directive_path)
+                return True
+            except FileNotFoundError:
+                # File was already claimed by another process
+                return False
+            except OSError:
+                # File system doesn't support atomic rename or other error
+                return False
+                
         except Exception as e:
-            self.logger.error(f"Batch processing failed: {e}")
-            print(f"❌ Batch processing error: {e}")
+            self.logger.warning(f"Failed to claim directive {directive_path.name}: {e}")
+            return False
     
     def get_claude_todos_from_directives(self, include_completed: bool = True) -> List[Dict[str, Any]]:
         """Get Claude Code todos from all directive files"""

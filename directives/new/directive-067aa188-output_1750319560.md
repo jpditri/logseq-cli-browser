@@ -1,4 +1,4 @@
-# Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
+# Write a simple Python function to add two numbers
 
 ## Status
 - pending
@@ -7,7 +7,7 @@
 - medium
 
 ## Description
-Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
+Write a simple Python function to add two numbers
 
 ## Directive
 - Link: [[]]

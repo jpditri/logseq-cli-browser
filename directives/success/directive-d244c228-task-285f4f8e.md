@@ -1,29 +1,33 @@
 ---
-id: task-91edbf41
+id: task-285f4f8e
 status: pending
 priority: medium
-created: 2025-06-19T00:28:03.205749
-slug: directive-901773a9
+created: 2025-06-19T00:48:59.887053
+slug: directive-d244c228
+platform: openai
+model: gpt-4
 ---
 
-# Directive: Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
+# Directive: Write a simple hello world Python script
 
 ## Task Details
-- **ID**: task-91edbf41
+- **ID**: task-285f4f8e
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-19T00:28:03.205749
+- **Created**: 2025-06-19T00:48:59.887053
 
 ## Prerequisites
-- [[directive-1b287b76-task-afd08992]]
-- [[directive-6bfd12c9-task-c7cf814a]]
-- [[directive-b0c71e36-task-92f98614]]
+- None
+
+## AI Requirements
+- **Platform**: openai
+- **Model**: gpt-4
 
 ## Prompt
-# Task: Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
+# Task: Write a simple hello world Python script
 
 ## Objective
-Complete the following task: Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
+Complete the following task: Write a simple hello world Python script
 
 ## Priority Level
 Medium priority
@@ -64,7 +68,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-901773a9-output_1750318083]]
+- Link to output: [[directive-d244c228-output_1750319339]]
 
 ## Metadata
 - Type: Directive

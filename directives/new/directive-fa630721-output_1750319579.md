@@ -1,4 +1,4 @@
-# Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
+# Solve this logic puzzle: If all cats are mammals and some mammals are dogs, can we conclude that some cats are dogs
 
 ## Status
 - pending
@@ -7,7 +7,7 @@
 - medium
 
 ## Description
-Ultrathink about this before creating the todo list, and break it into parts that multiple junior developers could work on together
+Solve this logic puzzle: If all cats are mammals and some mammals are dogs, can we conclude that some cats are dogs
 
 ## Directive
 - Link: [[]]

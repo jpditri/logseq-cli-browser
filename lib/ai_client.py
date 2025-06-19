@@ -18,6 +18,204 @@ class AIClient:
         self.default_retry_attempts = 3
         self.default_retry_delay = 1.0
         
+        # OpenAI model definitions with capabilities
+        self.openai_models = {
+            # GPT-4 Models
+            "gpt-4o": {
+                "endpoint": "/v1/chat/completions",
+                "max_tokens": 128000,
+                "supports_vision": True,
+                "supports_function_calling": True,
+                "cost_per_1k_input": 0.005,
+                "cost_per_1k_output": 0.015
+            },
+            "gpt-4o-mini": {
+                "endpoint": "/v1/chat/completions", 
+                "max_tokens": 128000,
+                "supports_vision": True,
+                "supports_function_calling": True,
+                "cost_per_1k_input": 0.00015,
+                "cost_per_1k_output": 0.0006
+            },
+            "gpt-4-turbo": {
+                "endpoint": "/v1/chat/completions",
+                "max_tokens": 128000,
+                "supports_vision": True,
+                "supports_function_calling": True,
+                "cost_per_1k_input": 0.01,
+                "cost_per_1k_output": 0.03
+            },
+            "gpt-4": {
+                "endpoint": "/v1/chat/completions",
+                "max_tokens": 8192,
+                "supports_vision": False,
+                "supports_function_calling": True,
+                "cost_per_1k_input": 0.03,
+                "cost_per_1k_output": 0.06
+            },
+            "gpt-4-32k": {
+                "endpoint": "/v1/chat/completions",
+                "max_tokens": 32768,
+                "supports_vision": False,
+                "supports_function_calling": True,
+                "cost_per_1k_input": 0.06,
+                "cost_per_1k_output": 0.12
+            },
+            
+            # GPT-3.5 Models
+            "gpt-3.5-turbo": {
+                "endpoint": "/v1/chat/completions",
+                "max_tokens": 16385,
+                "supports_vision": False,
+                "supports_function_calling": True,
+                "cost_per_1k_input": 0.0015,
+                "cost_per_1k_output": 0.002
+            },
+            "gpt-3.5-turbo-16k": {
+                "endpoint": "/v1/chat/completions",
+                "max_tokens": 16385,
+                "supports_vision": False, 
+                "supports_function_calling": True,
+                "cost_per_1k_input": 0.003,
+                "cost_per_1k_output": 0.004
+            },
+            
+            # O1 Reasoning Models
+            "o1-preview": {
+                "endpoint": "/v1/chat/completions",
+                "max_tokens": 128000,
+                "supports_vision": False,
+                "supports_function_calling": False,
+                "cost_per_1k_input": 0.015,
+                "cost_per_1k_output": 0.06,
+                "reasoning_model": True
+            },
+            "o1-mini": {
+                "endpoint": "/v1/chat/completions",
+                "max_tokens": 128000,
+                "supports_vision": False,
+                "supports_function_calling": False,
+                "cost_per_1k_input": 0.003,
+                "cost_per_1k_output": 0.012,
+                "reasoning_model": True
+            },
+            
+            # Codex Models (Code Generation)
+            "code-davinci-002": {
+                "endpoint": "/v1/completions",
+                "max_tokens": 8000,
+                "supports_vision": False,
+                "supports_function_calling": False,
+                "cost_per_1k_tokens": 0.0,  # Free during beta
+                "code_model": True
+            },
+            "code-cushman-001": {
+                "endpoint": "/v1/completions", 
+                "max_tokens": 2048,
+                "supports_vision": False,
+                "supports_function_calling": False,
+                "cost_per_1k_tokens": 0.0,  # Free during beta
+                "code_model": True
+            },
+            "codex-mini-latest": {
+                "endpoint": "/v1/completions",
+                "max_tokens": 4096,
+                "supports_vision": False,
+                "supports_function_calling": False,
+                "cost_per_1k_tokens": 0.0,  # Free during beta
+                "code_model": True
+            },
+            
+            # Text Generation Models (Legacy)
+            "text-davinci-003": {
+                "endpoint": "/v1/completions",
+                "max_tokens": 4000,
+                "supports_vision": False,
+                "supports_function_calling": False,
+                "cost_per_1k_tokens": 0.02
+            },
+            "text-davinci-002": {
+                "endpoint": "/v1/completions",
+                "max_tokens": 4000,
+                "supports_vision": False,
+                "supports_function_calling": False,
+                "cost_per_1k_tokens": 0.02
+            },
+            "text-curie-001": {
+                "endpoint": "/v1/completions",
+                "max_tokens": 2048,
+                "supports_vision": False,
+                "supports_function_calling": False,
+                "cost_per_1k_tokens": 0.002
+            },
+            "text-babbage-001": {
+                "endpoint": "/v1/completions",
+                "max_tokens": 2048,
+                "supports_vision": False,
+                "supports_function_calling": False,
+                "cost_per_1k_tokens": 0.0005
+            },
+            "text-ada-001": {
+                "endpoint": "/v1/completions",
+                "max_tokens": 2048,
+                "supports_vision": False,
+                "supports_function_calling": False,
+                "cost_per_1k_tokens": 0.0004
+            },
+            
+            # Embedding Models
+            "text-embedding-3-large": {
+                "endpoint": "/v1/embeddings",
+                "dimensions": 3072,
+                "cost_per_1k_tokens": 0.00013,
+                "embedding_model": True
+            },
+            "text-embedding-3-small": {
+                "endpoint": "/v1/embeddings", 
+                "dimensions": 1536,
+                "cost_per_1k_tokens": 0.00002,
+                "embedding_model": True
+            },
+            "text-embedding-ada-002": {
+                "endpoint": "/v1/embeddings",
+                "dimensions": 1536,
+                "cost_per_1k_tokens": 0.0001,
+                "embedding_model": True
+            },
+            
+            # Audio Models
+            "whisper-1": {
+                "endpoint": "/v1/audio/transcriptions",
+                "cost_per_minute": 0.006,
+                "audio_model": True
+            },
+            "tts-1": {
+                "endpoint": "/v1/audio/speech",
+                "cost_per_1k_chars": 0.015,
+                "tts_model": True
+            },
+            "tts-1-hd": {
+                "endpoint": "/v1/audio/speech",
+                "cost_per_1k_chars": 0.03,
+                "tts_model": True
+            },
+            
+            # Image Models
+            "dall-e-3": {
+                "endpoint": "/v1/images/generations",
+                "cost_standard": 0.04,  # 1024x1024
+                "cost_hd": 0.08,       # 1024x1024 HD
+                "image_model": True
+            },
+            "dall-e-2": {
+                "endpoint": "/v1/images/generations", 
+                "cost_1024": 0.02,     # 1024x1024
+                "cost_512": 0.018,     # 512x512
+                "cost_256": 0.016,     # 256x256
+                "image_model": True
+            }
+        }
+        
     def chat_completion(self, prompt: str, platform: str = None, model: str = None, 
                        retry_attempts: int = None, retry_delay: float = None) -> Dict[str, Any]:
         """Send a chat completion request to the specified platform with retry logic"""
@@ -138,30 +336,68 @@ class AIClient:
             }
     
     def _openai_completion(self, prompt: str, model: str = None) -> Dict[str, Any]:
-        """Send completion request to OpenAI API"""
+        """Send completion request to OpenAI API with support for all model types"""
         if not self.openai_key:
             raise ValueError("OPENAI_API_KEY not set")
         
         if not model:
-            model = "gpt-4"
+            model = "gpt-4o-mini"  # Updated default to latest efficient model
         
-        url = "https://api.openai.com/v1/chat/completions"
+        # Get model configuration
+        model_config = self.openai_models.get(model, {})
+        if not model_config:
+            # Fallback for unknown models - assume chat completion
+            model_config = {
+                "endpoint": "/v1/chat/completions",
+                "max_tokens": 4000,
+                "supports_vision": False,
+                "supports_function_calling": False
+            }
+        
+        endpoint = model_config.get("endpoint", "/v1/chat/completions")
+        max_tokens = min(model_config.get("max_tokens", 4000), 4000)  # Cap at 4000 for this implementation
+        
+        url = f"https://api.openai.com{endpoint}"
         headers = {
             "Authorization": f"Bearer {self.openai_key}",
             "Content-Type": "application/json"
         }
         
-        data = {
-            "model": model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "max_tokens": 4000,
-            "temperature": 0.7
-        }
+        # Handle different endpoint types
+        if endpoint == "/v1/chat/completions":
+            # Chat completions (GPT-4, GPT-3.5, O1 models)
+            data = {
+                "model": model,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "max_tokens": max_tokens,
+                "temperature": 0.7
+            }
+            
+            # O1 models don't support temperature or system messages
+            if model_config.get("reasoning_model"):
+                del data["temperature"]
+                
+        elif endpoint == "/v1/completions":
+            # Text completions (Davinci, Codex models)
+            data = {
+                "model": model,
+                "prompt": prompt,
+                "max_tokens": max_tokens,
+                "temperature": 0.7
+            }
+            
+        else:
+            # For other endpoints (embeddings, audio, images), provide basic structure
+            # These would need specific handling in separate methods
+            data = {
+                "model": model,
+                "input": prompt
+            }
         
         try:
             response = requests.post(url, headers=headers, json=data, timeout=60)
@@ -178,12 +414,22 @@ class AIClient:
             
             result = response.json()
             
+            # Extract content based on endpoint type
+            if endpoint == "/v1/chat/completions":
+                content = result["choices"][0]["message"]["content"]
+            elif endpoint == "/v1/completions":
+                content = result["choices"][0]["text"]
+            else:
+                content = str(result)  # Fallback for other endpoints
+            
             return {
                 "success": True,
                 "platform": "openai",
                 "model": model,
-                "content": result["choices"][0]["message"]["content"],
+                "content": content,
                 "usage": result.get("usage", {}),
+                "model_config": model_config,
+                "endpoint": endpoint,
                 "raw_response": result,
                 "timestamp": datetime.now().isoformat()
             }
@@ -200,6 +446,73 @@ class AIClient:
                 "content": "",
                 "timestamp": datetime.now().isoformat()
             }
+    
+    def list_openai_models(self, filter_type: str = None) -> Dict[str, Any]:
+        """List available OpenAI models with optional filtering"""
+        if filter_type:
+            if filter_type == "chat":
+                models = {k: v for k, v in self.openai_models.items() 
+                         if v.get("endpoint") == "/v1/chat/completions"}
+            elif filter_type == "completion":
+                models = {k: v for k, v in self.openai_models.items() 
+                         if v.get("endpoint") == "/v1/completions"}
+            elif filter_type == "code":
+                models = {k: v for k, v in self.openai_models.items() 
+                         if v.get("code_model", False)}
+            elif filter_type == "embedding":
+                models = {k: v for k, v in self.openai_models.items() 
+                         if v.get("embedding_model", False)}
+            elif filter_type == "audio":
+                models = {k: v for k, v in self.openai_models.items() 
+                         if v.get("audio_model", False) or v.get("tts_model", False)}
+            elif filter_type == "image":
+                models = {k: v for k, v in self.openai_models.items() 
+                         if v.get("image_model", False)}
+            elif filter_type == "reasoning":
+                models = {k: v for k, v in self.openai_models.items() 
+                         if v.get("reasoning_model", False)}
+            else:
+                models = self.openai_models
+        else:
+            models = self.openai_models
+        
+        return {
+            "total_models": len(models),
+            "filter": filter_type,
+            "models": models
+        }
+    
+    def get_model_info(self, model: str) -> Dict[str, Any]:
+        """Get detailed information about a specific model"""
+        if model in self.openai_models:
+            return {
+                "model": model,
+                "available": True,
+                "platform": "openai",
+                **self.openai_models[model]
+            }
+        else:
+            return {
+                "model": model,
+                "available": False,
+                "platform": "openai",
+                "error": "Model not found in configuration"
+            }
+    
+    def get_recommended_model(self, task_type: str = "general") -> str:
+        """Get recommended model for different task types"""
+        recommendations = {
+            "general": "gpt-4o-mini",           # Best balance of performance and cost
+            "coding": "gpt-4o",                 # Best for code generation
+            "codex": "code-davinci-002",        # Specialized code model
+            "reasoning": "o1-preview",          # Advanced reasoning
+            "fast": "gpt-3.5-turbo",           # Fastest response
+            "cheap": "gpt-4o-mini",            # Most cost-effective
+            "advanced": "gpt-4o",              # Most capable
+            "legacy_completion": "text-davinci-003"  # Legacy text completion
+        }
+        
+        return recommendations.get(task_type, "gpt-4o-mini")
 
 
 def test_connection():
@@ -223,6 +536,48 @@ def test_connection():
             print(f"✅ OpenAI: {result['content'][:50]}...")
         else:
             print(f"❌ OpenAI: {result['error']}")
+        
+        # Test different model types
+        print(f"\n📋 Available OpenAI Models:")
+        
+        # Test code models
+        code_models = client.list_openai_models("code")
+        print(f"🔧 Code Models: {len(code_models['models'])} available")
+        for model in list(code_models['models'].keys())[:3]:
+            print(f"  - {model}")
+        
+        # Test chat models  
+        chat_models = client.list_openai_models("chat")
+        print(f"💬 Chat Models: {len(chat_models['models'])} available")
+        for model in list(chat_models['models'].keys())[:3]:
+            print(f"  - {model}")
+        
+        # Test reasoning models
+        reasoning_models = client.list_openai_models("reasoning")
+        print(f"🧠 Reasoning Models: {len(reasoning_models['models'])} available")
+        for model in reasoning_models['models'].keys():
+            print(f"  - {model}")
+        
+        # Show recommendations
+        print(f"\n💡 Model Recommendations:")
+        print(f"  General: {client.get_recommended_model('general')}")
+        print(f"  Coding: {client.get_recommended_model('coding')}")
+        print(f"  Codex: {client.get_recommended_model('codex')}")
+        print(f"  Reasoning: {client.get_recommended_model('reasoning')}")
+        print(f"  Fast: {client.get_recommended_model('fast')}")
+        print(f"  Cheap: {client.get_recommended_model('cheap')}")
+        
+        # Test Codex model if available
+        print(f"\n🔧 Testing Codex Model...")
+        codex_result = client.chat_completion(
+            "Write a Python function to calculate fibonacci numbers", 
+            "openai", 
+            "code-davinci-002"
+        )
+        if codex_result["success"]:
+            print(f"✅ Codex: Generated {len(codex_result['content'])} characters of code")
+        else:
+            print(f"❌ Codex: {codex_result['error']}")
     
     if not client.claude_key and not client.openai_key:
         print("❌ No API keys found. Set ANTHROPIC_API_KEY and/or OPENAI_API_KEY")

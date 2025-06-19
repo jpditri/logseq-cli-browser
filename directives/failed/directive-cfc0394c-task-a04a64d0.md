@@ -1,28 +1,27 @@
 ---
-id: task-2183c15d
+id: task-a04a64d0
 status: pending
 priority: medium
-created: 2025-06-19T00:35:41.664616
-slug: directive-b0c71e36
+created: 2025-06-19T00:47:45.246145
+slug: directive-cfc0394c
 ---
 
-# Directive: &#x27;:q&#x27; should exit the cli
+# Directive: cli.prompt
 
 ## Task Details
-- **ID**: task-2183c15d
+- **ID**: task-a04a64d0
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-19T00:35:41.664616
+- **Created**: 2025-06-19T00:47:45.246145
 
 ## Prerequisites
-- [[directive-1b287b76-task-1601437d]]
-- [[directive-6bfd12c9-task-fa9ac799]]
+- None
 
 ## Prompt
-# Task: &#x27;:q&#x27; should exit the cli
+# Task: cli.prompt
 
 ## Objective
-Complete the following task: &#x27;:q&#x27; should exit the cli
+Complete the following task: cli.prompt
 
 ## Priority Level
 Medium priority
@@ -63,7 +62,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-b0c71e36-output_1750318541]]
+- Link to output: [[directive-cfc0394c-output_1750319265]]
 
 ## Metadata
 - Type: Directive

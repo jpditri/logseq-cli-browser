@@ -1,4 +1,4 @@
-# &#x27;:q&#x27; should exit the cli
+# Write a simple hello world Python script
 
 ## Status
 - pending
@@ -7,7 +7,7 @@
 - medium
 
 ## Description
-&#x27;:q&#x27; should exit the cli
+Write a simple hello world Python script
 
 ## Directive
 - Link: [[]]

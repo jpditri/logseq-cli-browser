@@ -1,4 +1,4 @@
-# &#x27;:q&#x27; should exit the cli
+# Explain the difference between recursion and iteration in programming
 
 ## Status
 - pending
@@ -7,7 +7,7 @@
 - medium
 
 ## Description
-&#x27;:q&#x27; should exit the cli
+Explain the difference between recursion and iteration in programming
 
 ## Directive
 - Link: [[]]

@@ -1,27 +1,33 @@
 ---
-id: task-fa9ac799
+id: task-54baad4e
 status: pending
 priority: medium
-created: 2025-06-19T00:35:41.663402
-slug: directive-6bfd12c9
+created: 2025-06-19T00:53:15.318633
+slug: directive-c3544f5a
+platform: openai
+model: gpt-4o
 ---
 
-# Directive: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
+# Directive: Explain the difference between recursion and iteration in programming
 
 ## Task Details
-- **ID**: task-fa9ac799
+- **ID**: task-54baad4e
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-19T00:35:41.663402
+- **Created**: 2025-06-19T00:53:15.318633
 
 ## Prerequisites
-- [[directive-1b287b76-task-1601437d]]
+- None
+
+## AI Requirements
+- **Platform**: openai
+- **Model**: gpt-4o
 
 ## Prompt
-# Task: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
+# Task: Explain the difference between recursion and iteration in programming
 
 ## Objective
-Complete the following task: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
+Complete the following task: Explain the difference between recursion and iteration in programming
 
 ## Priority Level
 Medium priority
@@ -62,7 +68,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-6bfd12c9-output_1750318541]]
+- Link to output: [[directive-c3544f5a-output_1750319595]]
 
 ## Metadata
 - Type: Directive

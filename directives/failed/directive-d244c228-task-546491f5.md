@@ -1,27 +1,33 @@
 ---
-id: task-c7cf814a
+id: task-546491f5
 status: pending
 priority: medium
-created: 2025-06-19T00:28:03.204840
-slug: directive-6bfd12c9
+created: 2025-06-19T00:48:28.978712
+slug: directive-d244c228
+platform: claude
+model: claude-3-sonnet-20240229
 ---
 
-# Directive: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
+# Directive: Write a simple hello world Python script
 
 ## Task Details
-- **ID**: task-c7cf814a
+- **ID**: task-546491f5
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-19T00:28:03.204840
+- **Created**: 2025-06-19T00:48:28.978712
 
 ## Prerequisites
-- [[directive-1b287b76-task-afd08992]]
+- None
+
+## AI Requirements
+- **Platform**: claude
+- **Model**: claude-3-sonnet-20240229
 
 ## Prompt
-# Task: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
+# Task: Write a simple hello world Python script
 
 ## Objective
-Complete the following task: Pressing the &#x27;e&#x27; key should open the file in the default editor for editing, upon writing and closing which the user should return to the logseq cli browser on the now updated page
+Complete the following task: Write a simple hello world Python script
 
 ## Priority Level
 Medium priority
@@ -62,7 +68,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-6bfd12c9-output_1750318083]]
+- Link to output: [[directive-d244c228-output_1750319308]]
 
 ## Metadata
 - Type: Directive

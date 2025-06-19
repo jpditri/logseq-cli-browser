@@ -1,27 +1,33 @@
 ---
-id: task-8c316fe0
+id: task-e9505288
 status: pending
 priority: medium
-created: 2025-06-19T00:35:49.287424
-slug: directive-ba9702d8
+created: 2025-06-19T00:52:40.255332
+slug: directive-067aa188
+platform: openai
+model: gpt-4o-mini
 ---
 
-# Directive: Create a simple hello world script in Python
+# Directive: Write a simple Python function to add two numbers
 
 ## Task Details
-- **ID**: task-8c316fe0
+- **ID**: task-e9505288
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-19T00:35:49.287424
+- **Created**: 2025-06-19T00:52:40.255332
 
 ## Prerequisites
 - None
 
+## AI Requirements
+- **Platform**: openai
+- **Model**: gpt-4o-mini
+
 ## Prompt
-# Task: Create a simple hello world script in Python
+# Task: Write a simple Python function to add two numbers
 
 ## Objective
-Complete the following task: Create a simple hello world script in Python
+Complete the following task: Write a simple Python function to add two numbers
 
 ## Priority Level
 Medium priority
@@ -62,7 +68,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-ba9702d8-output_1750318549]]
+- Link to output: [[directive-067aa188-output_1750319560]]
 
 ## Metadata
 - Type: Directive
