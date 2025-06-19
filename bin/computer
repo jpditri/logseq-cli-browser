@@ -46,6 +46,12 @@ class ComputerCLI
       run_template_command(args)
     when 'todo', 'todos'
       run_todo_command(args)
+    when 'quarantine', 'q'
+      run_quarantine_command(args)
+    when 'mcp'
+      run_mcp_command(args)
+    when 'security', 'sec'
+      run_security_command(args)
     when 'help', '-h', '--help'
       show_help
     else
@@ -92,8 +98,13 @@ class ComputerCLI
   def run_engage_agent(args)
     options = parse_engage_options(args)
     
-    if options[:parallel] && options[:parallel] > 1
-      run_parallel_engage(options)
+    if options[:single]
+      run_single_engage(options)
+    elsif options[:warp] && options[:warp] > 1
+      run_warp_engage(options)
+    elsif options[:impulse] || (!options[:warp] && !options[:single])
+      # Default to impulse mode if no specific mode is set
+      run_impulse_engage(options)
     else
       run_single_engage(options)
     end
@@ -109,9 +120,9 @@ class ComputerCLI
     system(*cmd)
   end
 
-  def run_parallel_engage(options)
-    thread_count = options[:parallel]
-    puts "🚀 Running #{thread_count} parallel Engage Agents..."
+  def run_warp_engage(options)
+    thread_count = options[:warp]
+    puts "⚡ Running #{thread_count} warp-speed Engage Agents..."
     
     threads = []
     mutex = Mutex.new
@@ -144,7 +155,16 @@ class ComputerCLI
     end
     
     threads.each(&:join)
-    puts "✅ Parallel processing complete! Total processed: #{processed_count}"
+    puts "✅ Warp processing complete! Total processed: #{processed_count}"
+  end
+
+  def run_impulse_engage(options)
+    puts "🚀 Running Impulse Batch Processing..."
+    
+    cmd = ['python3', (@agents_path + 'engage_agent.py').to_s, '--batch-mode']
+    cmd << '--api-mode' if @claude_key || @openai_key
+    
+    system(*cmd)
   end
 
   def parse_directive_options(args)
@@ -188,8 +208,17 @@ class ComputerCLI
         options[:single] = true
       end
       
-      opts.on('-j', '--parallel THREADS', Integer, 'Number of parallel processing threads') do |threads|
-        options[:parallel] = threads
+      opts.on('-w', '--warp THREADS', Integer, 'Number of parallel processing threads (legacy mode)') do |threads|
+        options[:warp] = threads
+      end
+      
+      opts.on('-i', '--impulse', 'Use batch processing mode (default)') do
+        options[:impulse] = true
+      end
+      
+      opts.on('-j', '--parallel THREADS', Integer, 'DEPRECATED: Use --warp instead') do |threads|
+        puts "⚠️  Warning: --parallel is deprecated. Use --warp instead."
+        options[:warp] = threads
       end
       
       opts.on('-h', '--help', 'Show this help') do
@@ -232,6 +261,20 @@ class ComputerCLI
     puts "\n🔑 API Configuration:"
     puts "   Claude API   : #{@claude_key ? '✅ Configured' : '❌ Missing'}"
     puts "   OpenAI API   : #{@openai_key ? '✅ Configured' : '❌ Missing'}"
+    
+    # Show batch processing capabilities
+    puts "\n🚀 Processing Modes:"
+    puts "   Impulse (Batch) : #{(@claude_key || @openai_key) ? '✅ Available' : '❌ Requires API keys'}"
+    puts "   Warp (Threads)  : ✅ Available"
+    puts "   Single          : ✅ Available"
+    
+    # Show batch processing status
+    batch_dir = @base_path + 'directives' + 'batches'
+    if batch_dir.exist?
+      batch_files = Dir.glob(batch_dir + '*')
+      puts "\n📦 Batch Processing:"
+      puts "   Active batches: #{batch_files.length} files"
+    end
     
     # Show settings file status
     settings_file = @base_path + '.computer-settings'
@@ -552,6 +595,305 @@ class ComputerCLI
     puts "\n📊 Directive Counts:"
     show_status([])
   end
+  
+  def run_quarantine_command(args)
+    options = parse_quarantine_options(args)
+    
+    case options[:action]
+    when 'list'
+      list_quarantine(options)
+    when 'review'
+      review_quarantine(options)
+    when 'approve'
+      approve_quarantine(options)
+    when 'reject'
+      reject_quarantine(options)
+    when 'stats'
+      show_quarantine_stats(options)
+    when 'cleanup'
+      cleanup_quarantine(options)
+    else
+      puts "Usage: computer quarantine <list|review|approve|reject|stats|cleanup> [options]"
+    end
+  end
+  
+  def parse_quarantine_options(args)
+    options = { action: args.shift }
+    
+    OptionParser.new do |opts|
+      opts.banner = "Usage: computer quarantine <command> [options]"
+      
+      opts.on('-f', '--file FILE', 'Quarantine file to review/approve/reject') do |file|
+        options[:file] = file
+      end
+      
+      opts.on('-r', '--reviewer NAME', 'Reviewer name for approval/rejection') do |reviewer|
+        options[:reviewer] = reviewer
+      end
+      
+      opts.on('-n', '--notes NOTES', 'Review notes') do |notes|
+        options[:notes] = notes
+      end
+      
+      opts.on('-a', '--all', 'Include reviewed items') do
+        options[:all] = true
+      end
+      
+      opts.on('--days DAYS', Integer, 'Days for cleanup (default: 30)') do |days|
+        options[:days] = days
+      end
+      
+      opts.on('-h', '--help', 'Show this help') do
+        puts opts
+        exit
+      end
+    end.parse!(args)
+    
+    options
+  end
+  
+  def list_quarantine(options)
+    puts "🔒 Quarantined Prompts"
+    puts "="*50
+    
+    quarantine_script = @base_path + 'lib' + 'quarantine_cli.py'
+    cmd = ['python3', quarantine_script.to_s, 'list']
+    cmd << '--all' if options[:all]
+    
+    system(*cmd)
+  end
+  
+  def review_quarantine(options)
+    unless options[:file]
+      puts "❌ Quarantine file required. Use --file option."
+      return
+    end
+    
+    puts "🔍 Reviewing quarantined prompt: #{options[:file]}"
+    
+    quarantine_script = @base_path + 'lib' + 'quarantine_cli.py'
+    system('python3', quarantine_script.to_s, 'review', options[:file])
+  end
+  
+  def approve_quarantine(options)
+    unless options[:file] && options[:reviewer]
+      puts "❌ File and reviewer required. Use --file and --reviewer options."
+      return
+    end
+    
+    puts "✅ Approving quarantined prompt: #{options[:file]}"
+    
+    quarantine_script = @base_path + 'lib' + 'quarantine_cli.py'
+    cmd = ['python3', quarantine_script.to_s, 'approve', options[:file], options[:reviewer]]
+    cmd += ['--notes', options[:notes]] if options[:notes]
+    
+    system(*cmd)
+  end
+  
+  def reject_quarantine(options)
+    unless options[:file] && options[:reviewer]
+      puts "❌ File and reviewer required. Use --file and --reviewer options."
+      return
+    end
+    
+    puts "❌ Rejecting quarantined prompt: #{options[:file]}"
+    
+    quarantine_script = @base_path + 'lib' + 'quarantine_cli.py'
+    cmd = ['python3', quarantine_script.to_s, 'reject', options[:file], options[:reviewer]]
+    cmd += ['--notes', options[:notes]] if options[:notes]
+    
+    system(*cmd)
+  end
+  
+  def show_quarantine_stats(options)
+    puts "📊 Quarantine Statistics"
+    puts "="*50
+    
+    quarantine_script = @base_path + 'lib' + 'quarantine_cli.py'
+    system('python3', quarantine_script.to_s, 'stats')
+  end
+  
+  def cleanup_quarantine(options)
+    days = options[:days] || 30
+    puts "🧹 Cleaning quarantine older than #{days} days..."
+    
+    quarantine_script = @base_path + 'lib' + 'quarantine_cli.py'
+    system('python3', quarantine_script.to_s, 'cleanup', '--days', days.to_s)
+  end
+  
+  def run_mcp_command(args)
+    options = parse_mcp_options(args)
+    
+    case options[:action]
+    when 'server'
+      run_mcp_server(options)
+    when 'connect'
+      connect_mcp_peer(options)
+    when 'list'
+      list_mcp_peers(options)
+    when 'add'
+      add_mcp_peer(options)
+    when 'status'
+      show_mcp_status(options)
+    else
+      puts "Usage: computer mcp <server|connect|list|add|status> [options]"
+    end
+  end
+  
+  def parse_mcp_options(args)
+    options = { action: args.shift }
+    
+    OptionParser.new do |opts|
+      opts.banner = "Usage: computer mcp <command> [options]"
+      
+      opts.on('-p', '--port PORT', Integer, 'Port for MCP server (default: 8765)') do |port|
+        options[:port] = port
+      end
+      
+      opts.on('-h', '--host HOST', 'Host for MCP server (default: localhost)') do |host|
+        options[:host] = host
+      end
+      
+      opts.on('-n', '--name NAME', 'Peer server name') do |name|
+        options[:name] = name
+      end
+      
+      opts.on('-u', '--url URL', 'Peer server URL') do |url|
+        options[:url] = url
+      end
+      
+      opts.on('-t', '--timeout SECONDS', Integer, 'Connection timeout') do |timeout|
+        options[:timeout] = timeout
+      end
+      
+      opts.on('--help', 'Show this help') do
+        puts opts
+        exit
+      end
+    end.parse!(args)
+    
+    options
+  end
+  
+  def run_mcp_server(options)
+    port = options[:port] || 8765
+    host = options[:host] || 'localhost'
+    
+    puts "🚀 Starting MCP server on #{host}:#{port}..."
+    puts "⚠️  Server exposes READ-ONLY directive status"
+    puts "🔒 All peer prompts will be QUARANTINED for review"
+    
+    mcp_server_script = @base_path + 'lib' + 'mcp_server.py'
+    system('python3', mcp_server_script.to_s, '--host', host, '--port', port.to_s, '--base-path', @base_path.to_s)
+  end
+  
+  def connect_mcp_peer(options)
+    unless options[:name]
+      puts "❌ Peer name required. Use --name option."
+      return
+    end
+    
+    timeout = options[:timeout] || 30
+    puts "🔗 Connecting to peer: #{options[:name]}"
+    puts "⚠️  Any received prompts will be QUARANTINED"
+    
+    mcp_client_script = @base_path + 'lib' + 'mcp_client_cli.py'
+    system('python3', mcp_client_script.to_s, 'connect', options[:name], '--timeout', timeout.to_s)
+  end
+  
+  def list_mcp_peers(options)
+    puts "🌐 MCP Peer Servers"
+    puts "="*50
+    
+    mcp_client_script = @base_path + 'lib' + 'mcp_client_cli.py'
+    system('python3', mcp_client_script.to_s, 'list')
+  end
+  
+  def add_mcp_peer(options)
+    unless options[:name] && options[:url]
+      puts "❌ Name and URL required. Use --name and --url options."
+      return
+    end
+    
+    puts "➕ Adding MCP peer: #{options[:name]}"
+    
+    mcp_client_script = @base_path + 'lib' + 'mcp_client_cli.py'
+    system('python3', mcp_client_script.to_s, 'add', options[:name], options[:url])
+  end
+  
+  def show_mcp_status(options)
+    puts "📊 MCP System Status"
+    puts "="*50
+    
+    mcp_client_script = @base_path + 'lib' + 'mcp_client_cli.py'
+    system('python3', mcp_client_script.to_s, 'status')
+  end
+  
+  def run_security_command(args)
+    options = parse_security_options(args)
+    
+    case options[:action]
+    when 'audit'
+      show_security_audit(options)
+    when 'scan'
+      security_scan(options)
+    when 'config'
+      show_security_config(options)
+    else
+      puts "Usage: computer security <audit|scan|config> [options]"
+    end
+  end
+  
+  def parse_security_options(args)
+    options = { action: args.shift }
+    
+    OptionParser.new do |opts|
+      opts.banner = "Usage: computer security <command> [options]"
+      
+      opts.on('-d', '--days DAYS', Integer, 'Days of audit logs to show') do |days|
+        options[:days] = days
+      end
+      
+      opts.on('-f', '--filter FILTER', 'Filter audit logs') do |filter|
+        options[:filter] = filter
+      end
+      
+      opts.on('--help', 'Show this help') do
+        puts opts
+        exit
+      end
+    end.parse!(args)
+    
+    options
+  end
+  
+  def show_security_audit(options)
+    days = options[:days] || 7
+    puts "🔐 Security Audit (Last #{days} days)"
+    puts "="*50
+    
+    security_script = @base_path + 'lib' + 'security_audit.py'
+    cmd = ['python3', security_script.to_s, 'audit', '--days', days.to_s]
+    cmd += ['--filter', options[:filter]] if options[:filter]
+    
+    system(*cmd)
+  end
+  
+  def security_scan(options)
+    puts "🔍 Security Scan"
+    puts "="*50
+    
+    security_script = @base_path + 'lib' + 'security_audit.py'
+    system('python3', security_script.to_s, 'scan')
+  end
+  
+  def show_security_config(options)
+    puts "⚙️  Security Configuration"
+    puts "="*50
+    
+    security_script = @base_path + 'lib' + 'security_audit.py'
+    system('python3', security_script.to_s, 'config')
+  end
 
   def show_help
     puts <<~HELP
@@ -569,6 +911,9 @@ class ComputerCLI
           interactive, i   Start interactive REPL mode
           template, t      Manage directive templates
           todo, todos      Manage Claude Code todos integration
+          quarantine, q    Manage quarantined prompts (SECURITY)
+          mcp             MCP server and peer management
+          security, sec    Security audit and configuration
           help            Show this help message
       
       DIRECTIVE AGENT:
@@ -577,9 +922,11 @@ class ComputerCLI
           computer directive --text "Build API" --platform claude --model claude-3-sonnet
       
       ENGAGE AGENT:
-          computer engage                    # Process all directives
+          computer engage                    # Process all directives (uses --impulse by default)
+          computer engage --impulse          # Use batch processing for maximum efficiency  
           computer engage --single           # Process one directive
-          computer engage --parallel 4       # Process with 4 parallel threads
+          computer engage --warp 4           # Process with 4 warp-speed threads (legacy mode)
+          computer engage --parallel 4       # DEPRECATED: Use --warp instead
       
       STATUS & MANAGEMENT:
           computer status                    # Show directive counts and system status
@@ -609,8 +956,12 @@ class ComputerCLI
           echo "Implement user management system" > task.txt
           computer d -f task.txt
           
-          # Process directives in parallel
-          computer e -j 4                    # 4 parallel threads
+          # Process directives with batch processing (default)
+          computer e                         # Uses --impulse batch mode
+          computer e --impulse               # Explicit batch processing
+          
+          # Process directives with warp-speed threads (legacy)
+          computer e --warp 4                # 4 warp-speed threads
           
           # Process single directive
           computer e -s
@@ -637,6 +988,25 @@ class ComputerCLI
           computer todo status                  # Show todo overview
           computer todo create -f todos.json   # Create directives from todos
           computer todo sync -f todos.json     # Sync todo status
+          
+          # Security and quarantine management
+          computer quarantine list              # List quarantined prompts
+          computer quarantine review -f Q-abc123.md  # Review specific prompt
+          computer quarantine approve -f Q-abc123.md -r username  # Approve prompt
+          computer quarantine stats             # Show quarantine statistics
+          
+          # MCP server and peer management
+          computer mcp server                   # Start MCP server (localhost:8765)
+          computer mcp server -p 8080           # Start on specific port
+          computer mcp add -n peer1 -u ws://localhost:8766  # Add trusted peer
+          computer mcp connect -n peer1         # Connect to peer and quarantine prompts
+          computer mcp list                     # List trusted peers
+          computer mcp status                   # Show MCP system status
+          
+          # Security audit and monitoring
+          computer security audit               # Show security audit logs
+          computer security scan                # Run security scan
+          computer security config              # Show security configuration
       
       PLATFORM OPTIONS:
           claude    - Anthropic Claude (requires ANTHROPIC_API_KEY)

@@ -21,6 +21,7 @@ from ai_client import AIClient
 from settings import get_settings
 from logger import get_logger, PerformanceTracker
 from todo_directive_bridge import TodoDirectiveBridge
+from batch_processor import BatchProcessor, BatchRequest
 
 
 class EngageAgent:
@@ -55,6 +56,9 @@ class EngageAgent:
         
         # Initialize todo-directive bridge
         self.todo_bridge = TodoDirectiveBridge(base_path)
+        
+        # Initialize batch processor
+        self.batch_processor = BatchProcessor(base_path)
         
         # Initialize context persistence
         self.context_path = self.base_path / "directives" / "context"
@@ -626,6 +630,152 @@ if __name__ == "__main__":
             self.logger.info(f"{remaining} directives remain with unmet prerequisites")
             print(f"📋 {remaining} directive(s) remain (may have unmet prerequisites)")
     
+    def run_batch_processing(self):
+        """Process all directives using batch APIs for maximum efficiency"""
+        if not self.api_mode:
+            print("❌ Batch processing requires API mode. Set API keys and use --api-mode flag.")
+            return
+        
+        self.logger.info("Starting batch processing mode")
+        print("🚀 Starting Impulse Batch Processing...")
+        print(f"Monitoring: {self.directives_new}")
+        
+        # Collect all available directives
+        directive_files = list(self.directives_new.glob("*.md"))
+        if not directive_files:
+            print("No directives available for processing")
+            return
+        
+        print(f"📋 Found {len(directive_files)} directives to process")
+        
+        # Convert directives to batch requests
+        batch_requests = []
+        for directive_path in directive_files:
+            try:
+                metadata = self.parse_directive_metadata(directive_path)
+                if not metadata:
+                    self.logger.warning(f"Skipping {directive_path.name} - no metadata")
+                    continue
+                
+                # Check prerequisites
+                task_content = self.extract_task_content(directive_path)
+                if self.has_unmet_prerequisites(directive_path, task_content):
+                    self.logger.info(f"Skipping {directive_path.name} - unmet prerequisites")
+                    continue
+                
+                # Determine platform and model
+                platform = metadata.get('platform', 'claude')
+                model = metadata.get('model', 'claude-3-sonnet-20240229' if platform == 'claude' else 'gpt-4')
+                
+                # Create batch request
+                request_id = directive_path.stem
+                batch_request = BatchRequest(
+                    id=request_id,
+                    directive_path=directive_path,
+                    platform=platform,
+                    model=model,
+                    prompt=task_content,
+                    metadata=metadata
+                )
+                batch_requests.append(batch_request)
+                
+            except Exception as e:
+                self.logger.error(f"Error preparing {directive_path.name} for batch: {e}")
+                continue
+        
+        if not batch_requests:
+            print("No directives are ready for batch processing")
+            return
+        
+        print(f"🎯 Submitting {len(batch_requests)} directives for batch processing...")
+        
+        # Process in batches
+        try:
+            results = self.batch_processor.process_directives_in_batches(batch_requests)
+            
+            # Process results and move directives
+            success_count = 0
+            failed_count = 0
+            
+            for request in batch_requests:
+                request_id = request.id
+                directive_path = request.directive_path
+                
+                if request_id in results:
+                    result = results[request_id]
+                    
+                    if result['success']:
+                        # Move to success directory
+                        success_path = self.directives_success / directive_path.name
+                        shutil.move(str(directive_path), str(success_path))
+                        
+                        # Create output file
+                        output_file = success_path.with_suffix('.out')
+                        with open(output_file, 'w') as f:
+                            f.write(f"# Batch Processing Output\n\n")
+                            f.write(f"Platform: {result['platform']}\n")
+                            f.write(f"Model: {result['model']}\n\n")
+                            f.write(result['content'])
+                        
+                        success_count += 1
+                        self.logger.info(f"✅ Batch success: {directive_path.name}")
+                        
+                        # Update session context
+                        self._update_session_context_with_directive(
+                            directive_path, True, 0.0, result['content']
+                        )
+                        
+                    else:
+                        # Move to failed directory
+                        failed_path = self.directives_failed / directive_path.name
+                        shutil.move(str(directive_path), str(failed_path))
+                        
+                        # Create error file
+                        error_file = failed_path.with_suffix('.err')
+                        with open(error_file, 'w') as f:
+                            f.write(f"# Batch Processing Error\n\n")
+                            f.write(f"Platform: {result['platform']}\n")
+                            f.write(f"Model: {result['model']}\n\n")
+                            f.write(f"Error: {result['error']}")
+                        
+                        failed_count += 1
+                        self.logger.error(f"❌ Batch failed: {directive_path.name} - {result['error']}")
+                        
+                        # Update session context
+                        self._update_session_context_with_directive(
+                            directive_path, False, 0.0, result['error']
+                        )
+                else:
+                    # No result received - move to failed
+                    failed_path = self.directives_failed / directive_path.name
+                    shutil.move(str(directive_path), str(failed_path))
+                    
+                    error_file = failed_path.with_suffix('.err')
+                    with open(error_file, 'w') as f:
+                        f.write("# Batch Processing Error\n\nNo result received from batch processing")
+                    
+                    failed_count += 1
+                    self.logger.error(f"❌ No batch result: {directive_path.name}")
+            
+            # Save updated session context
+            self._save_session_context(self.session_context)
+            
+            print(f"\n🏁 Batch Processing Complete!")
+            print(f"✅ Successful: {success_count}")
+            print(f"❌ Failed: {failed_count}")
+            print(f"📊 Total Processed: {success_count + failed_count}")
+            
+            self.logger.info(f"Batch processing complete - {success_count} success, {failed_count} failed")
+            
+            # Show remaining directives
+            remaining = len(list(self.directives_new.glob("*.md")))
+            if remaining > 0:
+                print(f"📋 {remaining} directive(s) remain (may have unmet prerequisites)")
+            
+        except Exception as e:
+            self.logger.error(f"Batch processing failed: {e}")
+            print(f"❌ Batch processing error: {e}")
+    
     def get_claude_todos_from_directives(self, include_completed: bool = True) -> List[Dict[str, Any]]:
         """Get Claude Code todos from all directive files"""
         return self.todo_bridge.get_claude_todos_from_directives(include_completed)
@@ -689,6 +839,7 @@ def main():
     parser = argparse.ArgumentParser(description='Process directive tasks')
     parser.add_argument('--single', action='store_true', help='Process only one directive')
     parser.add_argument('--api-mode', action='store_true', help='Use AI APIs for task execution')
+    parser.add_argument('--batch-mode', action='store_true', help='Use batch processing for maximum efficiency')
     parser.add_argument('--claude-todos', help='JSON file containing Claude Code todos for sync')
     parser.add_argument('--list-todos', action='store_true', help='List todos from directives')
     
@@ -726,6 +877,9 @@ def main():
         else:
             print("No directives available to process")
             sys.exit(1)  # Failure exit code for parallel processing
+    elif args.batch_mode:
+        # Use batch processing mode
+        agent.run_batch_processing()
     else:
         # Process all available directives
         if claude_todos:

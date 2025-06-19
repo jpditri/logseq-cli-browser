@@ -1,0 +1,13 @@
+{
+  "example_peer_server": {
+    "url": "ws://localhost:8766",
+    "name": "Example Peer Server",
+    "auto_quarantine": true,
+    "allowed_operations": [
+      "submit_prompt",
+      "get_status"
+    ],
+    "rate_limit_override": 60,
+    "enabled": false
+  }
+}
