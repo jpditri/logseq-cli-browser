@@ -1,0 +1,19 @@
+# Computer Project Python Dependencies
+# Core dependencies
+requests>=2.31.0
+PyYAML>=6.0.1
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.1
+
+# Development dependencies
+black>=23.7.0
+flake8>=6.0.0
+mypy>=1.5.0
+
+# Optional enhanced features
+rich>=13.5.0  # For better CLI output formatting
+click>=8.1.0  # For enhanced CLI parsing
+sqlite3  # Built-in Python module for data persistence

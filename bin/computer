@@ -1,0 +1,658 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'pathname'
+require 'concurrent'
+require 'thread'
+
+class ComputerCLI
+  def initialize
+    @base_path = Pathname.new(__FILE__).dirname.parent
+    @agents_path = @base_path + 'agents'
+    check_api_keys
+  end
+
+  def check_api_keys
+    @claude_key = ENV['ANTHROPIC_API_KEY']
+    @openai_key = ENV['OPENAI_API_KEY']
+    
+    if !@claude_key && !@openai_key
+      puts "⚠️  Warning: No API keys found. Set ANTHROPIC_API_KEY and/or OPENAI_API_KEY for AI processing."
+    end
+  end
+
+  def run(args)
+    if args.empty?
+      show_help
+      exit 1
+    end
+
+    command = args.shift
+    
+    case command
+    when 'directive', 'd'
+      run_directive_agent(args)
+    when 'engage', 'e'
+      run_engage_agent(args)
+    when 'status', 's'
+      show_status(args)
+    when 'clean', 'c'
+      clean_directives(args)
+    when 'export', 'x'
+      export_data(args)
+    when 'interactive', 'i', 'repl'
+      run_interactive_mode(args)
+    when 'template', 't'
+      run_template_command(args)
+    when 'todo', 'todos'
+      run_todo_command(args)
+    when 'help', '-h', '--help'
+      show_help
+    else
+      puts "Unknown command: #{command}"
+      show_help
+      exit 1
+    end
+  end
+
+  private
+
+  def run_directive_agent(args)
+    options = parse_directive_options(args)
+    
+    if options[:text]
+      prompt = options[:text]
+    elsif options[:file]
+      unless File.exist?(options[:file])
+        puts "Error: File '#{options[:file]}' not found"
+        exit 1
+      end
+      prompt = File.read(options[:file]).strip
+    else
+      puts "Error: Must specify either --text or --file"
+      exit 1
+    end
+
+    puts "🤖 Running Directive Agent..."
+    puts "📝 Prompt: #{prompt[0..100]}#{'...' if prompt.length > 100}"
+    
+    cmd = [
+      'python3',
+      (@agents_path + 'directive_agent.py').to_s,
+      prompt
+    ]
+    
+    # Add platform/model options if specified
+    cmd << "--platform" << options[:platform] if options[:platform]
+    cmd << "--model" << options[:model] if options[:model]
+    
+    system(*cmd)
+  end
+
+  def run_engage_agent(args)
+    options = parse_engage_options(args)
+    
+    if options[:parallel] && options[:parallel] > 1
+      run_parallel_engage(options)
+    else
+      run_single_engage(options)
+    end
+  end
+
+  def run_single_engage(options)
+    puts "🎯 Running Engage Agent..."
+    
+    cmd = ['python3', (@agents_path + 'engage_agent.py').to_s]
+    cmd << '--single' if options[:single]
+    cmd << '--api-mode' if @claude_key || @openai_key
+    
+    system(*cmd)
+  end
+
+  def run_parallel_engage(options)
+    thread_count = options[:parallel]
+    puts "🚀 Running #{thread_count} parallel Engage Agents..."
+    
+    threads = []
+    mutex = Mutex.new
+    processed_count = 0
+    
+    thread_count.times do |i|
+      threads << Thread.new do
+        Thread.current[:id] = i + 1
+        
+        loop do
+          cmd = ['python3', (@agents_path + 'engage_agent.py').to_s, '--single']
+          cmd << '--api-mode' if @claude_key || @openai_key
+          
+          result = system(*cmd)
+          
+          if result
+            mutex.synchronize do
+              processed_count += 1
+              puts "🧵 Thread #{Thread.current[:id]}: Processed directive ##{processed_count}"
+            end
+          else
+            # No more directives to process
+            puts "🧵 Thread #{Thread.current[:id]}: No more directives, terminating"
+            break
+          end
+          
+          sleep 0.5  # Brief pause between processing
+        end
+      end
+    end
+    
+    threads.each(&:join)
+    puts "✅ Parallel processing complete! Total processed: #{processed_count}"
+  end
+
+  def parse_directive_options(args)
+    options = {}
+    
+    OptionParser.new do |opts|
+      opts.banner = "Usage: computer directive [options]"
+      
+      opts.on('-t', '--text TEXT', 'Prompt text to process') do |text|
+        options[:text] = text
+      end
+      
+      opts.on('-f', '--file FILE', 'File containing prompt text') do |file|
+        options[:file] = file
+      end
+      
+      opts.on('-p', '--platform PLATFORM', 'Required platform (claude, openai)') do |platform|
+        options[:platform] = platform
+      end
+      
+      opts.on('-m', '--model MODEL', 'Required model (e.g., claude-3-sonnet, gpt-4)') do |model|
+        options[:model] = model
+      end
+      
+      opts.on('-h', '--help', 'Show this help') do
+        puts opts
+        exit
+      end
+    end.parse!(args)
+    
+    options
+  end
+
+  def parse_engage_options(args)
+    options = {}
+    
+    OptionParser.new do |opts|
+      opts.banner = "Usage: computer engage [options]"
+      
+      opts.on('-s', '--single', 'Process only one directive') do
+        options[:single] = true
+      end
+      
+      opts.on('-j', '--parallel THREADS', Integer, 'Number of parallel processing threads') do |threads|
+        options[:parallel] = threads
+      end
+      
+      opts.on('-h', '--help', 'Show this help') do
+        puts opts
+        exit
+      end
+    end.parse!(args)
+    
+    options
+  end
+
+  def show_status(args)
+    puts "📊 Computer System Status"
+    puts "="*50
+    
+    # Count files in each directory
+    directories = {
+      'new' => @base_path + 'directives' + 'new',
+      'success' => @base_path + 'directives' + 'success', 
+      'failed' => @base_path + 'directives' + 'failed',
+      'slow' => @base_path + 'directives' + 'slow',
+      'exemplars' => @base_path + 'directives' + 'possible-exemplars'
+    }
+    
+    directories.each do |name, path|
+      if path.exist?
+        count = Dir.glob(path + '*.md').length
+        status_emoji = case name
+                      when 'new' then '🆕'
+                      when 'success' then '✅' 
+                      when 'failed' then '❌'
+                      when 'slow' then '🐌'
+                      when 'exemplars' then '⭐'
+                      end
+        puts "#{status_emoji} #{name.capitalize.ljust(12)}: #{count} directives"
+      end
+    end
+    
+    # Show API key status
+    puts "\n🔑 API Configuration:"
+    puts "   Claude API   : #{@claude_key ? '✅ Configured' : '❌ Missing'}"
+    puts "   OpenAI API   : #{@openai_key ? '✅ Configured' : '❌ Missing'}"
+    
+    # Show settings file status
+    settings_file = @base_path + '.computer-settings'
+    puts "\n⚙️  Settings File: #{settings_file.exist? ? '✅ Found' : '❌ Missing'}"
+  end
+  
+  def clean_directives(args)
+    options = parse_clean_options(args)
+    
+    puts "🧹 Cleaning directive directories..."
+    
+    directories = {
+      'success' => @base_path + 'directives' + 'success',
+      'failed' => @base_path + 'directives' + 'failed', 
+      'slow' => @base_path + 'directives' + 'slow'
+    }
+    
+    total_removed = 0
+    
+    directories.each do |name, path|
+      next unless path.exist?
+      
+      files = Dir.glob(path + '*.md')
+      old_files = files.select do |file|
+        File.mtime(file) < Time.now - (options[:days] || 30) * 24 * 60 * 60
+      end
+      
+      if old_files.any?
+        if options[:dry_run]
+          puts "🔍 Would remove #{old_files.length} files from #{name}/"
+          old_files.each { |f| puts "   - #{File.basename(f)}" }
+        else
+          old_files.each { |f| File.delete(f) }
+          puts "🗑️  Removed #{old_files.length} files from #{name}/"
+        end
+        total_removed += old_files.length
+      end
+    end
+    
+    if total_removed == 0
+      puts "✨ No old files found to clean"
+    elsif options[:dry_run]
+      puts "\n📋 Run without --dry-run to actually remove #{total_removed} files"
+    else
+      puts "\n✅ Cleaned #{total_removed} old directive files"
+    end
+  end
+  
+  def export_data(args)
+    options = parse_export_options(args)
+    
+    puts "📤 Exporting directive data..."
+    
+    # Collect all directive files
+    all_files = []
+    ['new', 'success', 'failed', 'slow', 'possible-exemplars'].each do |dir|
+      path = @base_path + 'directives' + dir
+      next unless path.exist?
+      
+      Dir.glob(path + '*.md').each do |file|
+        all_files << {
+          path: file,
+          status: dir,
+          name: File.basename(file),
+          modified: File.mtime(file)
+        }
+      end
+    end
+    
+    output_file = options[:output] || "computer_export_#{Time.now.strftime('%Y%m%d_%H%M%S')}.csv"
+    
+    require 'csv'
+    CSV.open(output_file, 'w') do |csv|
+      csv << ['Name', 'Status', 'Modified', 'Path']
+      all_files.sort_by { |f| f[:modified] }.reverse.each do |file|
+        csv << [file[:name], file[:status], file[:modified], file[:path]]
+      end
+    end
+    
+    puts "✅ Exported #{all_files.length} directives to #{output_file}"
+  end
+  
+  def run_interactive_mode(args)
+    puts "🖥️  Starting Computer Interactive Mode..."
+    
+    # Check if Python is available
+    python_cmd = system('python3 --version > /dev/null 2>&1') ? 'python3' : 'python'
+    
+    interactive_script = @base_path + 'lib' + 'interactive.py'
+    
+    unless interactive_script.exist?
+      puts "❌ Interactive mode not available: #{interactive_script} not found"
+      exit 1
+    end
+    
+    # Run the Python interactive mode
+    exec(python_cmd, interactive_script.to_s)
+  end
+  
+  def run_template_command(args)
+    options = parse_template_options(args)
+    
+    case options[:action]
+    when 'list'
+      list_templates
+    when 'create'
+      create_template(options)
+    when 'show'
+      show_template(options[:name])
+    else
+      puts "Usage: computer template <list|create|show> [options]"
+    end
+  end
+  
+  def list_templates
+    puts "📋 Listing available templates..."
+    
+    directive_script = @base_path + 'agents' + 'directive_agent.py'
+    system('python3', directive_script.to_s, '--list-templates')
+  end
+  
+  def create_template(options)
+    puts "🎆 Creating new template: #{options[:name]}"
+    
+    unless options[:file]
+      puts "❌ Template file required. Use --file option."
+      return
+    end
+    
+    unless File.exist?(options[:file])
+      puts "❌ Template file not found: #{options[:file]}"
+      return
+    end
+    
+    # This would integrate with the Python template system
+    puts "✅ Template creation functionality would be implemented here"
+    puts "   Name: #{options[:name]}"
+    puts "   File: #{options[:file]}"
+    puts "   Description: #{options[:description] || 'No description'}"
+  end
+  
+  def show_template(name)
+    if name
+      puts "📝 Showing template: #{name}"
+      puts "ℹ️  Template viewing functionality would be implemented here"
+    else
+      puts "❌ Template name required"
+    end
+  end
+  
+  def parse_template_options(args)
+    options = { action: args.shift }
+    
+    OptionParser.new do |opts|
+      opts.banner = "Usage: computer template <command> [options]"
+      
+      opts.on('-n', '--name NAME', 'Template name') do |name|
+        options[:name] = name
+      end
+      
+      opts.on('-f', '--file FILE', 'Template file path') do |file|
+        options[:file] = file
+      end
+      
+      opts.on('-d', '--description DESC', 'Template description') do |desc|
+        options[:description] = desc
+      end
+      
+      opts.on('-h', '--help', 'Show this help') do
+        puts opts
+        exit
+      end
+    end.parse!(args)
+    
+    options
+  end
+  
+  def parse_clean_options(args)
+    options = {}
+    
+    OptionParser.new do |opts|
+      opts.banner = "Usage: computer clean [options]"
+      
+      opts.on('-d', '--days DAYS', Integer, 'Remove files older than DAYS (default: 30)') do |days|
+        options[:days] = days
+      end
+      
+      opts.on('-n', '--dry-run', 'Show what would be removed without actually removing') do
+        options[:dry_run] = true
+      end
+      
+      opts.on('-h', '--help', 'Show this help') do
+        puts opts
+        exit
+      end
+    end.parse!(args)
+    
+    options
+  end
+  
+  def parse_export_options(args)
+    options = {}
+    
+    OptionParser.new do |opts|
+      opts.banner = "Usage: computer export [options]"
+      
+      opts.on('-o', '--output FILE', 'Output file (default: computer_export_TIMESTAMP.csv)') do |file|
+        options[:output] = file
+      end
+      
+      opts.on('-h', '--help', 'Show this help') do
+        puts opts
+        exit
+      end
+    end.parse!(args)
+    
+    options
+  end
+  
+  def run_todo_command(args)
+    options = parse_todo_options(args)
+    
+    case options[:action]
+    when 'list'
+      list_todos(options)
+    when 'sync'
+      sync_todos(options)
+    when 'create'
+      create_todos_from_file(options)
+    when 'status'
+      show_todo_status(options)
+    else
+      puts "Usage: computer todo <list|sync|create|status> [options]"
+    end
+  end
+  
+  def parse_todo_options(args)
+    options = { action: args.shift }
+    
+    OptionParser.new do |opts|
+      opts.banner = "Usage: computer todo <command> [options]"
+      
+      opts.on('-f', '--file FILE', 'JSON file containing Claude Code todos') do |file|
+        options[:file] = file
+      end
+      
+      opts.on('-c', '--completed', 'Include completed todos') do
+        options[:completed] = true
+      end
+      
+      opts.on('-o', '--output FILE', 'Output file for todo data') do |file|
+        options[:output] = file
+      end
+      
+      opts.on('-h', '--help', 'Show this help') do
+        puts opts
+        exit
+      end
+    end.parse!(args)
+    
+    options
+  end
+  
+  def list_todos(options)
+    puts "📋 Listing todos from directives..."
+    
+    engage_script = @base_path + 'agents' + 'engage_agent.py'
+    system('python3', engage_script.to_s, '--list-todos')
+  end
+  
+  def sync_todos(options)
+    unless options[:file]
+      puts "❌ Todo file required. Use --file option."
+      return
+    end
+    
+    unless File.exist?(options[:file])
+      puts "❌ Todo file not found: #{options[:file]}"
+      return
+    end
+    
+    puts "🔄 Syncing Claude Code todos with directive status..."
+    
+    engage_script = @base_path + 'agents' + 'engage_agent.py'
+    cmd = ['python3', engage_script.to_s, '--claude-todos', options[:file]]
+    cmd << '--api-mode' if @claude_key || @openai_key
+    
+    system(*cmd)
+  end
+  
+  def create_todos_from_file(options)
+    unless options[:file]
+      puts "❌ Todo file required. Use --file option."
+      return
+    end
+    
+    unless File.exist?(options[:file])
+      puts "❌ Todo file not found: #{options[:file]}"
+      return
+    end
+    
+    puts "📋 Creating directives from Claude Code todos..."
+    
+    directive_script = @base_path + 'agents' + 'directive_agent.py'
+    system('python3', directive_script.to_s, '--claude-todos', options[:file])
+  end
+  
+  def show_todo_status(options)
+    puts "📊 Claude Code Todo Status"
+    puts "="*50
+    
+    # Get todos from directives
+    engage_script = @base_path + 'agents' + 'engage_agent.py'
+    
+    puts "\n📋 Todos from Directive System:"
+    system('python3', engage_script.to_s, '--list-todos')
+    
+    puts "\n📊 Directive Counts:"
+    show_status([])
+  end
+
+  def show_help
+    puts <<~HELP
+      🖥️  Computer - Advanced Task Management & Directive Processing
+      
+      USAGE:
+          computer <command> [options]
+      
+      COMMANDS:
+          directive, d     Create directives from prompts
+          engage, e        Process pending directives
+          status, s        Show system status and directive counts
+          clean, c         Clean old directive files
+          export, x        Export directive data to CSV
+          interactive, i   Start interactive REPL mode
+          template, t      Manage directive templates
+          todo, todos      Manage Claude Code todos integration
+          help            Show this help message
+      
+      DIRECTIVE AGENT:
+          computer directive --text "Create a new feature"
+          computer directive --file prompt.txt
+          computer directive --text "Build API" --platform claude --model claude-3-sonnet
+      
+      ENGAGE AGENT:
+          computer engage                    # Process all directives
+          computer engage --single           # Process one directive
+          computer engage --parallel 4       # Process with 4 parallel threads
+      
+      STATUS & MANAGEMENT:
+          computer status                    # Show directive counts and system status
+          computer clean                     # Remove old directive files (30+ days)
+          computer clean --days 7            # Remove files older than 7 days
+          computer clean --dry-run           # Preview what would be removed
+          computer export                    # Export directive data to CSV
+          computer export -o report.csv      # Export to specific file
+      
+      TODO MANAGEMENT:
+          computer todo list                 # List todos from directives
+          computer todo status               # Show todo status overview
+          computer todo create -f todos.json # Create directives from Claude Code todos
+          computer todo sync -f todos.json   # Sync Claude todos with directive status
+      
+      API REQUIREMENTS:
+          Set environment variables:
+          export ANTHROPIC_API_KEY="your-claude-key"
+          export OPENAI_API_KEY="your-openai-key"
+      
+      EXAMPLES:
+          # Create directives with platform requirements
+          computer d -t "Build REST API" -p claude -m claude-3-sonnet
+          computer d -t "Write unit tests" -p openai -m gpt-4
+          
+          # Create directives from file
+          echo "Implement user management system" > task.txt
+          computer d -f task.txt
+          
+          # Process directives in parallel
+          computer e -j 4                    # 4 parallel threads
+          
+          # Process single directive
+          computer e -s
+          
+          # Check system status
+          computer status
+          
+          # Clean old files
+          computer clean --days 14
+          
+          # Export data for analysis
+          computer export -o monthly_report.csv
+          
+          # Start interactive mode
+          computer interactive
+          
+          # Manage templates
+          computer template list
+          computer template show api-project
+          computer template create --name my-template --file template.md
+          
+          # Manage Claude Code todos
+          computer todo list                    # List todos from directives
+          computer todo status                  # Show todo overview
+          computer todo create -f todos.json   # Create directives from todos
+          computer todo sync -f todos.json     # Sync todo status
+      
+      PLATFORM OPTIONS:
+          claude    - Anthropic Claude (requires ANTHROPIC_API_KEY)
+          openai    - OpenAI GPT (requires OPENAI_API_KEY)
+      
+      MODEL OPTIONS:
+          Claude: claude-3-opus, claude-3-sonnet, claude-3-haiku
+          OpenAI: gpt-4, gpt-4-turbo, gpt-3.5-turbo
+      
+      For more information, see README.md
+    HELP
+  end
+end
+
+# Run the CLI
+if __FILE__ == $0
+  cli = ComputerCLI.new
+  cli.run(ARGV)
+end
