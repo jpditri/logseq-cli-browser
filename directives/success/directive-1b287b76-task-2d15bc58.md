@@ -1,18 +1,18 @@
 ---
-id: task-8c81d559
+id: task-2d15bc58
 status: pending
 priority: medium
-created: 2025-06-19T06:49:30.506118
-slug: directive-cfc0394c
+created: 2025-06-19T07:00:39.772032
+slug: directive-1b287b76
 ---
 
-# Directive: cli.prompt
+# Directive: Implement a cli interface tool to browse through a logseq pages/ directory that starts at a list of all pages and the ability to use vim-key style navigation and /pattern searching, when the cursor is on a link to another page, pressing &#x27;o&#x27; should change the view to the linked page, &#x27;b&#x27; should return to the previous page and the app should maintain an in memory list of the pages in the order they navigated to them
 
 ## Task Details
-- **ID**: task-8c81d559
+- **ID**: task-2d15bc58
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-19T06:49:30.506118
+- **Created**: 2025-06-19T07:00:39.772032
 
 ## Prerequisites
 - None
@@ -30,10 +30,10 @@ variables:
 version: '1.0'
 ---
 
-# Task: cli.prompt
+# Task: Implement a cli interface tool to browse through a logseq pages/ directory that starts at a list of all pages and the ability to use vim-key style navigation and /pattern searching, when the cursor is on a link to another page, pressing &#x27;o&#x27; should change the view to the linked page, &#x27;b&#x27; should return to the previous page and the app should maintain an in memory list of the pages in the order they navigated to them
 
 ## Objective
-Complete the following task: cli.prompt
+Complete the following task: Implement a cli interface tool to browse through a logseq pages/ directory that starts at a list of all pages and the ability to use vim-key style navigation and /pattern searching, when the cursor is on a link to another page, pressing &#x27;o&#x27; should change the view to the linked page, &#x27;b&#x27; should return to the previous page and the app should maintain an in memory list of the pages in the order they navigated to them
 
 ## Priority Level
 Medium priority
@@ -74,7 +74,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-cfc0394c-output_1750340970]]
+- Link to output: [[directive-1b287b76-output_1750341639]]
 
 ## Metadata
 - Type: Directive

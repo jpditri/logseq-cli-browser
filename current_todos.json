@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1",
+    "content": "Remove existing directives",
+    "status": "completed",
+    "priority": "high"
+  },
+  {
+    "id": "2", 
+    "content": "Create directive from cli.prompt file",
+    "status": "completed",
+    "priority": "high"
+  },
+  {
+    "id": "3",
+    "content": "Run engage to process the directive", 
+    "status": "completed",
+    "priority": "high"
+  }
+]

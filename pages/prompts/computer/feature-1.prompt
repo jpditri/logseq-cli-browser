@@ -1,0 +1,46 @@
+# Computer CLI - Barebones Foundation
+
+Create a minimal Computer CLI application from scratch with the following requirements:
+
+## Core Structure
+- Ruby CLI application with a main `bin/computer` executable
+- Basic command-line argument parsing using OptionParser
+- Simple help system showing available commands
+- Directory structure for future expansion
+
+## Initial Commands
+Implement these basic commands:
+- `computer help` - Show usage information
+- `computer status` - Show system status (even if minimal)
+- `computer version` - Show version information
+
+## Technical Requirements
+- Ruby as the main language for CLI interface
+- Clean, modular code structure
+- Error handling for unknown commands
+- Extensible architecture for adding future commands
+- Basic logging or output to console
+
+## File Structure
+Create this directory structure:
+```
+├── bin/computer           # Main CLI executable
+├── lib/                   # Ruby library code (for future use)
+├── README.md             # Basic documentation
+```
+
+## Implementation Details
+- The CLI should be self-contained and runnable
+- Use standard Ruby gems only (optparse, pathname)
+- Include proper shebang line for Unix execution
+- Handle empty arguments gracefully
+- Print helpful error messages
+
+## Success Criteria
+- `./bin/computer` runs without errors
+- `./bin/computer help` shows usage information
+- `./bin/computer status` shows basic status
+- Unknown commands show helpful error message
+- Code is clean and ready for feature additions
+
+This creates the foundation for a task management and directive processing system.

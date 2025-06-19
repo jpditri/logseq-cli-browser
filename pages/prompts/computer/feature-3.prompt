@@ -1,0 +1,75 @@
+# Computer CLI - Task Processing Engine
+
+Add task processing functionality to execute directives and manage their lifecycle.
+
+## Feature Overview
+Implement an "engage" command that processes pending directive files by priority and age, executing tasks automatically and moving them to appropriate status directories.
+
+## New Commands
+Add these commands to the existing CLI:
+- `computer engage` - Process all available directives
+- `computer engage --single` - Process only one directive
+- `computer engage --warp 4` - Process with 4 parallel threads
+
+## Technical Implementation
+
+### Python Engage Agent
+- Create `agents/engage_agent.py` - Python script for directive processing
+- Implement priority-based directive selection
+- Support for prerequisite checking and dependency resolution
+- Task execution with timeout and error handling
+- Automatic file movement based on execution results
+
+### Ruby CLI Integration
+- Add `engage` command to main CLI
+- Support for single directive processing and parallel execution
+- Handle different processing modes (single, parallel)
+- Monitor and report processing progress
+
+## Processing Logic
+
+### Directive Selection
+1. **Scan** `directives/new/` for available directives
+2. **Parse** YAML frontmatter to get priority and metadata
+3. **Check** prerequisites are met (dependencies completed)
+4. **Sort** by priority (high > medium > low) then age (older first)
+5. **Select** next directive for processing
+
+### Task Execution
+1. **Extract** task content from directive file
+2. **Execute** task using appropriate method (script, AI, etc.)
+3. **Capture** output, duration, and success/failure status
+4. **Update** output files with execution results
+5. **Move** directive to appropriate status directory
+
+### Status Management
+Move processed directives based on results:
+- `success/` - Completed successfully
+- `failed/` - Failed to complete
+- `slow/` - Completed but took longer than threshold
+- `possible-exemplars/` - Completed quickly and efficiently
+
+## Key Features
+1. **Priority Processing**: Handle high-priority tasks first
+2. **Prerequisite Resolution**: Respect task dependencies
+3. **Parallel Execution**: Support multiple concurrent processing threads
+4. **Timeout Handling**: Prevent tasks from running indefinitely
+5. **Result Tracking**: Maintain execution logs and metrics
+6. **Output Management**: Update output files with results
+
+## File Operations
+- Parse directive metadata from YAML frontmatter
+- Extract prerequisites from directive content
+- Create and update output files with execution results
+- Move files between status directories atomically
+
+## Success Criteria
+- `computer engage` processes all available directives
+- Directives are selected by priority and age
+- Prerequisites are properly checked and respected
+- Failed tasks are moved to failed/ directory
+- Successful tasks are moved to success/ directory
+- Parallel processing works without conflicts
+- Execution metrics are tracked and logged
+
+This adds the core task execution engine to the Computer CLI system.

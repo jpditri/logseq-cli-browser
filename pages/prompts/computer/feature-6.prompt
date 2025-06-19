@@ -1,0 +1,158 @@
+# Computer CLI - Advanced Features & Integration
+
+Add advanced functionality including template management, todo integration, and interactive mode to complete the Computer CLI system.
+
+## Feature Overview
+Implement the final advanced features that make the Computer CLI a comprehensive task management and automation platform.
+
+## New Commands
+
+### Template Management
+- `computer template list` - Show available directive templates
+- `computer template show <name>` - Display template content
+- `computer template create --name <name> --file <template>` - Create custom template
+
+### Todo Integration
+- `computer todo list` - List todos from directives
+- `computer todo sync -f todos.json` - Sync with external todo systems
+- `computer todo create -f todos.json` - Create directives from todos
+
+### Interactive Mode
+- `computer interactive` - Start REPL-style interface
+- `computer repl` - Alias for interactive mode
+- Real-time directive creation and processing
+
+## Technical Implementation
+
+### Template System (`lib/template_manager.py`)
+- Template discovery and loading
+- Variable substitution system
+- Built-in templates for common task types
+- User-defined template support
+- Template validation and error handling
+
+### Todo Bridge (`lib/todo_directive_bridge.py`)
+- Integration with external todo systems
+- Bidirectional synchronization
+- Status mapping between systems
+- Conflict resolution for updates
+
+### Interactive Shell (`lib/interactive.py`)
+- Command-line REPL interface
+- Real-time directive processing
+- Tab completion for commands
+- History and session management
+
+## Template System Features
+
+### Built-in Templates
+- `directive-prompt` - Basic directive template
+- `api-project` - API development template
+- `code-review` - Code review template
+- `directive-out` - Output file template
+
+### Template Variables
+Support for dynamic content:
+- `{{TASK_CONTENT}}` - Main task description
+- `{{PRIORITY_LEVEL}}` - Task priority
+- `{{PROJECT_NAME}}` - Extracted project name
+- `{{FRAMEWORK}}` - Detected framework
+- `{{DATABASE}}` - Detected database
+
+### Custom Templates
+- User template directory support
+- Template inheritance and composition
+- Validation for required variables
+- Error handling for missing templates
+
+## Todo Integration Features
+
+### External System Support
+- JSON-based todo import/export
+- Mapping todo priorities and statuses
+- Preserving todo metadata and relationships
+- Batch processing of todo lists
+
+### Synchronization
+- Bidirectional status updates
+- Conflict detection and resolution
+- Incremental sync for large lists
+- Audit trail for changes
+
+## Interactive Mode Features
+
+### REPL Interface
+- Command auto-completion
+- Command history
+- Multi-line input support
+- Context-aware suggestions
+
+### Real-time Processing
+- Immediate directive creation
+- Live status updates
+- Progress monitoring
+- Error reporting and recovery
+
+## Enhanced Error Handling
+
+### Comprehensive Validation
+- Input sanitization and security checks
+- File permission validation
+- API connectivity testing
+- Template syntax validation
+
+### Recovery Mechanisms
+- Automatic retry for transient failures
+- Rollback for failed operations
+- Backup and restore functionality
+- Graceful degradation when services unavailable
+
+## Configuration & Settings
+
+### Settings File (`.computer-settings`)
+```yaml
+# Processing settings
+exemplar_threshold_seconds: 30
+exemplar_enabled: true
+sanitize_inputs: true
+
+# API settings
+default_platform: claude
+default_model: claude-3-sonnet
+api_timeout: 300
+
+# Template settings
+template_directory: ./templates
+user_template_directory: ~/.computer/templates
+```
+
+### Environment Integration
+- XDG Base Directory support
+- Environment variable override
+- User-specific configuration
+- System-wide defaults
+
+## Advanced CLI Features
+
+### Command Aliases
+- Short forms for all commands (`d`, `e`, `s`, `t`, `i`)
+- Flexible argument parsing
+- Context-sensitive defaults
+- Tab completion support
+
+### Logging & Monitoring
+- Structured logging to files
+- Performance metrics collection
+- Audit trail for all operations
+- Debug mode for troubleshooting
+
+## Success Criteria
+- Template system supports custom templates and variables
+- Todo integration works with external systems
+- Interactive mode provides full CLI functionality
+- Configuration system is flexible and user-friendly
+- All advanced features integrate seamlessly
+- Error handling is comprehensive and user-friendly
+- Documentation is complete and helpful
+
+This completes the Computer CLI as a full-featured task management and automation platform with advanced capabilities for power users.

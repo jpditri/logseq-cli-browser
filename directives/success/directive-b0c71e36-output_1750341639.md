@@ -1,10 +1,10 @@
 ---
-id: output-task-8c81d559
+id: output-task-0bfc70ee
 
-slug: directive-cfc0394c
+slug: directive-b0c71e36
 status: pending
 priority: medium
-created: 2025-06-19T06:49:30.505833
+created: 2025-06-19T07:00:39.773020
 directive: [[]]
 tokens_in: "{{TOKENS_IN}}"
 tokens_out: "{{TOKENS_OUT}}"
@@ -12,7 +12,7 @@ cost: "{{COST}}"
 processing_time: "{{PROCESSING_TIME}}"
 ---
 
-# cli.prompt
+# &#x27;:q&#x27; should exit the cli
 
 ## Status
 - pending
@@ -21,7 +21,7 @@ processing_time: "{{PROCESSING_TIME}}"
 - medium
 
 ## Description
-cli.prompt
+&#x27;:q&#x27; should exit the cli
 
 ## Directive
 - Link: [[]]

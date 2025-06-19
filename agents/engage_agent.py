@@ -28,6 +28,11 @@ class EngageAgent:
     def __init__(self, base_path: str = ".", api_mode: bool = False):
         self.base_path = Path(base_path)
         self.directives_dir = self.base_path / "directives"
+        self.directives_new = self.directives_dir / "new"
+        self.directives_success = self.directives_dir / "success"
+        self.directives_failed = self.directives_dir / "failed"
+        self.directives_slow = self.directives_dir / "slow"
+        self.directives_exemplars = self.directives_dir / "possible-exemplars"
         self.api_mode = api_mode
         self.settings = get_settings(base_path)
         self.logger = get_logger("engage_agent", base_path)
