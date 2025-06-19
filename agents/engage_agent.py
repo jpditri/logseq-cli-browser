@@ -27,11 +27,7 @@ from batch_processor import BatchProcessor, BatchRequest
 class EngageAgent:
     def __init__(self, base_path: str = ".", api_mode: bool = False):
         self.base_path = Path(base_path)
-        self.directives_new = self.base_path / "directives" / "new"
-        self.directives_success = self.base_path / "directives" / "success"
-        self.directives_failed = self.base_path / "directives" / "failed"
-        self.directives_slow = self.base_path / "directives" / "slow"
-        self.directives_exemplars = self.base_path / "directives" / "possible-exemplars"
+        self.directives_dir = self.base_path / "directives"
         self.api_mode = api_mode
         self.settings = get_settings(base_path)
         self.logger = get_logger("engage_agent", base_path)
@@ -752,7 +748,7 @@ if __name__ == "__main__":
         print(f"\n🏁 Engage Agent Complete! Processed {processed_count} directive(s)")
         
         # Show final status
-        remaining = len(list(self.directives_new.glob("*.md")))
+        remaining = len([f for f in self.directives_dir.glob("*.md") if self.parse_directive_metadata(f) and self.parse_directive_metadata(f).get('status') == 'pending'])
         if remaining > 0:
             self.logger.info(f"{remaining} directives remain with unmet prerequisites")
             print(f"📋 {remaining} directive(s) remain (may have unmet prerequisites)")
@@ -982,7 +978,7 @@ if __name__ == "__main__":
                 self.logger.warning(f"Failed to perform final Claude todo sync: {e}")
         
         # Show final status
-        remaining = len(list(self.directives_new.glob("*.md")))
+        remaining = len([f for f in self.directives_dir.glob("*.md") if self.parse_directive_metadata(f) and self.parse_directive_metadata(f).get('status') == 'pending'])
         if remaining > 0:
             self.logger.info(f"{remaining} directives remain with unmet prerequisites")
             print(f"📋 {remaining} directive(s) remain (may have unmet prerequisites)")

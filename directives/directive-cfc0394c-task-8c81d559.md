@@ -1,33 +1,39 @@
 ---
-id: task-546491f5
+id: task-8c81d559
 status: pending
 priority: medium
-created: 2025-06-19T00:48:28.978712
-slug: directive-d244c228
-platform: claude
-model: claude-3-sonnet-20240229
+created: 2025-06-19T06:49:30.506118
+slug: directive-cfc0394c
 ---
 
-# Directive: Write a simple hello world Python script
+# Directive: cli.prompt
 
 ## Task Details
-- **ID**: task-546491f5
+- **ID**: task-8c81d559
 - **Status**: pending
 - **Priority**: medium
-- **Created**: 2025-06-19T00:48:28.978712
+- **Created**: 2025-06-19T06:49:30.506118
 
 ## Prerequisites
 - None
 
-## AI Requirements
-- **Platform**: claude
-- **Model**: claude-3-sonnet-20240229
-
 ## Prompt
-# Task: Write a simple hello world Python script
+---
+author: Computer System
+category: system
+created: '2025-06-18T20:25:36.821109'
+description: Standard directive prompt template
+name: Directive Prompt
+variables:
+- TASK_CONTENT
+- PRIORITY_LEVEL
+version: '1.0'
+---
+
+# Task: cli.prompt
 
 ## Objective
-Complete the following task: Write a simple hello world Python script
+Complete the following task: cli.prompt
 
 ## Priority Level
 Medium priority
@@ -68,7 +74,7 @@ Your output should be structured markdown that includes:
 - Document any trade-offs or decisions made
 
 ### Outputs
-- Link to output: [[directive-d244c228-output_1750319308]]
+- Link to output: [[directive-cfc0394c-output_1750340970]]
 
 ## Metadata
 - Type: Directive

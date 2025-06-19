@@ -1,7 +1,0 @@
-# Sequential Processing Output
-
-Platform: openai
-Model: gpt-4
-Processing Time: 2.06s
-
-print("Hello, world!")

@@ -1,0 +1,23 @@
+# Sequential Processing Output
+
+Platform: claude
+Model: claude-3-5-sonnet-20241022
+Processing Time: 3.88s
+
+This appears to be a metadata header for a directive prompt template. I can help write a CLI prompt based on this template. The key elements are:
+
+The template has:
+- An author: "Computer System"
+- Category: "system" 
+- Creation date: June 18, 2025
+- Name: "Directive Prompt"
+- Two variables: TASK_CONTENT and PRIORITY_LEVEL
+- Version: 1.0
+
+Would you like me to:
+
+1. Generate a CLI prompt following this template structure?
+2. Explain how to use this template?
+3. Suggest improvements to the template?
+
+Please let me know how I can help you work with this directive prompt template.

@@ -1,10 +1,10 @@
 ---
-id: output-task-16bc91a4
+id: output-task-8c81d559
 
-slug: directive-b1cc7bfb
+slug: directive-cfc0394c
 status: pending
 priority: medium
-created: 2025-06-19T06:40:31.756404
+created: 2025-06-19T06:49:30.505833
 directive: [[]]
 tokens_in: "{{TOKENS_IN}}"
 tokens_out: "{{TOKENS_OUT}}"
@@ -12,7 +12,7 @@ cost: "{{COST}}"
 processing_time: "{{PROCESSING_TIME}}"
 ---
 
-# complete workflow test final
+# cli.prompt
 
 ## Status
 - pending
@@ -21,7 +21,7 @@ processing_time: "{{PROCESSING_TIME}}"
 - medium
 
 ## Description
-complete workflow test final
+cli.prompt
 
 ## Directive
 - Link: [[]]
