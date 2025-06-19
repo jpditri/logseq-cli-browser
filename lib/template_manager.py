@@ -145,12 +145,8 @@ class TemplateEngine:
         try:
             content = template_file.read_text()
             
-            # Remove YAML frontmatter if present
-            if content.startswith('---'):
-                parts = content.split('---', 2)
-                if len(parts) >= 3:
-                    return parts[2].strip()
-            
+            # Keep the full content including YAML frontmatter
+            # The frontmatter contains template variables that need substitution
             return content
         except Exception as e:
             print(f"Error loading template {template_file}: {e}")

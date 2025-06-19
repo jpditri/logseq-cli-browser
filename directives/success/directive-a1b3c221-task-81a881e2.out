@@ -1,0 +1,27 @@
+# Sequential Processing Output
+
+Platform: claude
+Model: claude-3-5-sonnet-20241022
+Processing Time: 4.56s
+
+Let me help you generate a response using this directive prompt template.
+
+I notice this appears to be a YAML-formatted template header with the following fields:
+- Author: Computer System 
+- Category: system
+- Created: 2025-06-18
+- Description: Standard directive prompt template
+- Name: Directive Prompt
+- Variables: TASK_CONTENT, PRIORITY_LEVEL
+- Version: 1.0
+
+The task is listed as "test template fix v3"
+
+Since this seems to be a test of the template format, I'll confirm I can parse the structure and variables. The template appears designed to handle tasks with content and priority level variables.
+
+Would you like me to:
+1. Generate a sample response using this template format?
+2. Validate the template structure?
+3. Something else specific with this template?
+
+Please let me know how I can best assist with testing this template.

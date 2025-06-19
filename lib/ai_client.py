@@ -277,7 +277,7 @@ class AIClient:
             raise ValueError("ANTHROPIC_API_KEY not set")
         
         if not model:
-            model = "claude-3-sonnet-20240229"
+            model = "claude-3-5-sonnet-20241022"
         
         url = "https://api.anthropic.com/v1/messages"
         headers = {

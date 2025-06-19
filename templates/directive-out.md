@@ -4,10 +4,10 @@ status: {{STATUS}}
 priority: {{PRIORITY}}
 created: {{CREATED_DATE}}
 directive: [[{{DIRECTIVE_FILE}}]]
-tokens_in: {{TOKENS_IN}}
-tokens_out: {{TOKENS_OUT}}
-cost: {{COST}}
-processing_time: {{PROCESSING_TIME}}
+tokens_in: "{{TOKENS_IN}}"
+tokens_out: "{{TOKENS_OUT}}"
+cost: "{{COST}}"
+processing_time: "{{PROCESSING_TIME}}"
 ---
 
 # {{TASK_TITLE}}

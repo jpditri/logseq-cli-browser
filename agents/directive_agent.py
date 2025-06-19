@@ -361,10 +361,15 @@ slug: {slug}
     
     def create_output_file(self, todo: Dict[str, Any], directive_filename: str) -> str:
         """Create an output file based on the template"""
+        slug = self.create_slug(todo['content'])
+        unix_timestamp = int(datetime.now().timestamp())
+        output_filename = f"{slug}-output_{unix_timestamp}.md"
+        output_path = self.directives_path / output_filename
+        
         # Try to use template engine first
         try:
-            template_content = self.template_engine.render_template('directive-out', {
-                'TASK_SLUG': self.create_slug(todo['content']),
+            output_content = self.template_engine.render_template('directive-out', {
+                'TASK_SLUG': slug,
                 'STATUS': todo['status'],
                 'PRIORITY': todo['priority'],
                 'CREATED_DATE': datetime.now().isoformat(),
@@ -372,33 +377,25 @@ slug: {slug}
                 'TASK_TITLE': todo['content'],
                 'TASK_DESCRIPTION': todo['content'],
                 'OUTPUT_CONTENT': '_Output pending completion of directive_',
-                'ADDITIONAL_NOTES': '_No additional notes yet_',
-                'TOKENS_IN': '{{TOKENS_IN}}',  # Placeholder for later substitution
-                'TOKENS_OUT': '{{TOKENS_OUT}}',
-                'COST': '{{COST}}',
-                'PROCESSING_TIME': '{{PROCESSING_TIME}}'
+                'ADDITIONAL_NOTES': '_No additional notes yet_'
+                # Note: TOKENS_IN, TOKENS_OUT, COST, PROCESSING_TIME left as placeholders
             })
         except Exception as e:
             self.logger.warning(f"Template engine failed, using fallback: {e}")
-            # Fallback to file-based template
+            # Fallback to file-based template with manual replacement
             template_path = self.templates_path / "directive-out.md"
             template_content = template_path.read_text()
-        
-        slug = self.create_slug(todo['content'])
-        unix_timestamp = int(datetime.now().timestamp())
-        output_filename = f"{slug}-output_{unix_timestamp}.md"
-        output_path = self.directives_path / output_filename
-        
-        # Replace template variables
-        output_content = template_content.replace("{{TASK_SLUG}}", slug)
-        output_content = output_content.replace("{{STATUS}}", todo['status'])
-        output_content = output_content.replace("{{PRIORITY}}", todo['priority'])
-        output_content = output_content.replace("{{CREATED_DATE}}", datetime.now().isoformat())
-        output_content = output_content.replace("{{DIRECTIVE_FILE}}", directive_filename.replace('.md', ''))
-        output_content = output_content.replace("{{TASK_TITLE}}", todo['content'])
-        output_content = output_content.replace("{{TASK_DESCRIPTION}}", todo['content'])
-        output_content = output_content.replace("{{OUTPUT_CONTENT}}", "_Output pending completion of directive_")
-        output_content = output_content.replace("{{ADDITIONAL_NOTES}}", "_No additional notes yet_")
+            
+            # Replace template variables manually
+            output_content = template_content.replace("{{TASK_SLUG}}", slug)
+            output_content = output_content.replace("{{STATUS}}", todo['status'])
+            output_content = output_content.replace("{{PRIORITY}}", todo['priority'])
+            output_content = output_content.replace("{{CREATED_DATE}}", datetime.now().isoformat())
+            output_content = output_content.replace("{{DIRECTIVE_FILE}}", directive_filename.replace('.md', ''))
+            output_content = output_content.replace("{{TASK_TITLE}}", todo['content'])
+            output_content = output_content.replace("{{TASK_DESCRIPTION}}", todo['content'])
+            output_content = output_content.replace("{{OUTPUT_CONTENT}}", "_Output pending completion of directive_")
+            output_content = output_content.replace("{{ADDITIONAL_NOTES}}", "_No additional notes yet_")
         
         # Add required ID field to YAML frontmatter if not present
         if output_content.startswith('---'):

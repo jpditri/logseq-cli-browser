@@ -1,4 +1,18 @@
-# Write a simple Python function to add two numbers
+---
+id: output-task-16bc91a4
+
+slug: directive-b1cc7bfb
+status: pending
+priority: medium
+created: 2025-06-19T06:40:31.756404
+directive: [[]]
+tokens_in: "{{TOKENS_IN}}"
+tokens_out: "{{TOKENS_OUT}}"
+cost: "{{COST}}"
+processing_time: "{{PROCESSING_TIME}}"
+---
+
+# complete workflow test final
 
 ## Status
 - pending
@@ -7,7 +21,7 @@
 - medium
 
 ## Description
-Write a simple Python function to add two numbers
+complete workflow test final
 
 ## Directive
 - Link: [[]]

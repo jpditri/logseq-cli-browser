@@ -819,7 +819,7 @@ if __name__ == "__main__":
                 
                 # Determine platform and model
                 platform = metadata.get('platform', 'claude')
-                model = metadata.get('model', 'claude-3-sonnet-20240229' if platform == 'claude' else 'gpt-4')
+                model = metadata.get('model', 'claude-3-5-sonnet-20241022' if platform == 'claude' else 'gpt-4o-mini')
                 
                 self.logger.info(f"Processing {directive_path.name} with {platform}/{model}")
                 
