@@ -1,321 +1,128 @@
-# Computer Task Manager
+# Logseq CLI Browser
 
-An advanced task management and directive processing system that combines semantic analysis with automated workflow execution using AI APIs. Features a dual-agent system for intelligent task breakdown and automated execution.
+A Ruby-based command-line interface for browsing and navigating Logseq markdown pages with vim-like keybindings.
 
 ## Overview
 
-This project implements a dual-agent system for creating and processing task directives:
+This project provides a terminal-based browser for navigating through Logseq markdown files. It features vim-like navigation, automatic page creation, and support for both wiki-style `[[links]]` and markdown `[links](file.md)`.
 
-- **Directive Agent**: Analyzes prompts and creates structured task directives with dependencies and AI platform requirements
-- **Engage Agent**: Processes directives in priority order using Claude or OpenAI APIs for task execution
-- **Parallel Processing**: Execute multiple directives simultaneously across different AI sessions
+## Features
+
+- **Vim-like Navigation**: Use `j/k` to move up/down, `o` to open pages/follow links
+- **Page Discovery**: Automatically discovers all `.md` files in the pages directory
+- **Link Following**: Supports both `[[wiki-style]]` and `[markdown](links.md)` formats
+- **Auto Page Creation**: Creates new pages when following links to non-existent pages  
+- **History Navigation**: Use `b` to go back through visited pages
+- **File Editing**: Press `e` to edit the current page in your preferred editor
+- **Terminal Optimized**: Responsive interface that adapts to terminal size
 
 ## Installation
 
-### From Source
+### Prerequisites
+
+- Ruby (version 2.7 or higher)
+- A text editor (vim, nano, etc.) for editing pages
+
+### Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/computer.git
-cd computer
+git clone https://github.com/your-username/logseq-cli-browser.git
+cd logseq-cli-browser
 
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Install development dependencies (optional)
-pip install -e ".[dev]"
-
-# Install Ruby dependencies for CLI
+# Install Ruby dependencies (if any)
 bundle install
+
+# Make the CLI executable
+chmod +x bin/logseq-browser
 ```
 
-### Using pip
+## Usage
+
+### Basic Navigation
 
 ```bash
-pip install computer-task-manager
+# Navigate pages in the current 'pages' directory
+./bin/logseq-browser
+
+# Navigate pages in a specific directory
+./bin/logseq-browser /path/to/your/pages
+```
+
+### Key Bindings
+
+**Page List View:**
+- `j/k` - Navigate up/down through pages
+- `o` or `Enter` - Open selected page
+- `:q` - Quit application
+
+**Page Content View:**
+- `j/k` - Navigate up/down through content lines
+- `o` or `Enter` - Follow link on current line (if any)
+- `b` - Go back to previous page
+- `e` - Edit current page in your default editor
+- `:q` - Return to page list (or quit if already in list view)
+
+### Environment Variables
+
+- `EDITOR` - Set your preferred text editor (defaults to vim)
+
+```bash
+export EDITOR=nano
+./bin/logseq-browser
 ```
 
 ## Directory Structure
 
 ```
-computer/
 ├── bin/
-│   └── computer           # Main Ruby command interface
-├── agents/                # Python agent implementations
-│   ├── directive_agent.py # Creates directives from prompts
-│   └── engage_agent.py    # Processes and executes directives
-├── lib/                   # Python library modules
-│   ├── ai_client.py       # AI API client for Claude and OpenAI
-│   ├── config_validator.py # Configuration validation
-│   ├── database.py        # SQLite database management
-│   ├── interactive.py     # Interactive mode handling
-│   ├── logger.py          # Logging utilities
-│   ├── security.py        # Security and API key management
-│   ├── settings.py        # Application settings
-│   └── template_manager.py # Template file management
-├── templates/             # Template files for directives
-│   ├── api-project.md     # API project template
-│   ├── code-review.md     # Code review template
-│   ├── directive-out.md   # Output template for completed directives
-│   ├── directive-prompt.md # Directive creation template
-│   ├── directives-prompt.md # Multi-directive template
-│   ├── engage-agent-prompt.md # Engage agent template
-│   └── user/             # User-specific templates
-├── directives/            # Task directive storage
-│   ├── new/              # Pending directives
-│   ├── success/          # Successfully completed directives
-│   ├── failed/           # Failed directives
-│   ├── slow/             # Slow-running directives (>60s)
-│   └── possible-exemplars/ # Example/reference directives
-├── tests/                # Test suite
-│   ├── test_ai_client.py
-│   ├── test_directive_agent.py
-│   └── test_settings.py
-├── pyproject.toml        # Python package configuration
-├── requirements.txt      # Python dependencies
-├── Gemfile              # Ruby dependencies
-└── computer.db          # SQLite database
-```
-
-## Quick Start
-
-### Prerequisites
-
-Set up your AI API keys:
-
-```bash
-export ANTHROPIC_API_KEY="your-claude-api-key"
-export OPENAI_API_KEY="your-openai-api-key"
-```
-
-### Using the Ruby Command Interface
-
-```bash
-# Create directives with platform requirements
-./bin/computer directive --text "Create a REST API" --platform claude --model claude-3-sonnet
-./bin/computer directive --text "Write unit tests" --platform openai --model gpt-4
-
-# Read prompt from file
-./bin/computer directive --file prompt.txt
-
-# Process directives with AI
-./bin/computer engage                    # Process all directives
-./bin/computer engage --single           # Process one directive  
-./bin/computer engage --parallel 4       # Process with 4 parallel threads
-```
-
-### Direct Python Usage
-
-```bash
-# Create directives with platform/model requirements
-python agents/directive_agent.py "Build REST API" --platform claude --model claude-3-sonnet
-python agents/directive_agent.py "Write tests" --platform openai --model gpt-4
-
-# Process directives with AI APIs
-python agents/engage_agent.py --api-mode             # Process all with AI
-python agents/engage_agent.py --api-mode --single    # Process one with AI
-
-# Test AI connections
-python lib/ai_client.py
+│   └── logseq-browser    # Main Ruby CLI application
+├── pages/                # Default pages directory (created if needed)
+├── templates/            # Template files
+├── Gemfile              # Ruby gem dependencies
+└── lib/                 # Ruby library code (future use)
 ```
 
 ## How It Works
 
-### Directive Agent
+1. **Page Discovery**: Scans the specified directory for `.md` files
+2. **Content Parsing**: Extracts wiki-style `[[links]]` and markdown `[links](file.md)`
+3. **Navigation**: Provides vim-like interface for browsing content
+4. **Link Resolution**: Automatically resolves links to existing pages or creates new ones
+5. **File Management**: Integrates with your system's text editor for content modification
 
-1. **Prompt Analysis**: Breaks down complex prompts into actionable todo items
-2. **Priority Assignment**: Automatically assigns priorities based on keywords
-3. **Dependency Detection**: Creates prerequisite chains between related tasks
-4. **Platform Requirements**: Embeds AI platform and model requirements
-5. **File Generation**: Creates structured markdown files with YAML frontmatter
+## Page Format
 
-### Engage Agent
+The browser works with standard markdown files and recognizes:
 
-1. **Priority Processing**: Selects highest priority tasks first
-2. **Dependency Resolution**: Ensures prerequisites are met before execution
-3. **AI Execution**: Sends tasks to Claude or OpenAI APIs based on requirements
-4. **Parallel Processing**: Supports multiple concurrent AI sessions
-5. **Status Tracking**: Moves completed tasks to appropriate directories
-6. **Output Management**: Updates output files with AI responses and execution results
+- **Wiki-style links**: `[[Page Name]]` - Links to pages by name
+- **Markdown links**: `[Link Text](filename.md)` - Links to specific files
+- **Standard Markdown**: Headers, lists, code blocks, etc.
 
-## Directive File Format
+## Development
 
-Directives use YAML frontmatter with structured content:
+### Technologies
 
-```markdown
----
-id: task-abc123
-status: pending
-priority: high
-created: 2024-01-01T12:00:00
-slug: create-user-auth
-platform: claude
-model: claude-3-sonnet
----
+- **Ruby**: Primary development language for CLI and navigation
+- **Markdown**: Page content format  
+- **Terminal**: Uses Ruby's IO.console for terminal interaction
 
-# Directive: Create user authentication system
+### Architecture
 
-## Prerequisites
-- [[setup-database-task-xyz]]
-- [[create-user-model-task-abc]]
-
-## AI Requirements
-- **Platform**: claude
-- **Model**: claude-3-sonnet
-
-## Prompt
-[Detailed task description and instructions]
-
-### Outputs
-- Link to output: [[create-user-auth-output_1704110400]]
-```
-
-## Features
-
-- **AI-Powered Execution**: Tasks processed using Claude or OpenAI APIs
-- **Platform Selection**: Specify required AI platform (Claude/OpenAI) per directive
-- **Model Requirements**: Choose specific models (claude-3-sonnet, gpt-4, etc.)
-- **Parallel Processing**: Execute multiple directives simultaneously across AI sessions
-- **Smart Priority Handling**: Keywords like "urgent", "critical" automatically increase priority
-- **Dependency Management**: Tasks can specify prerequisites using wiki-style links
-- **Timeout Protection**: Long-running tasks are moved to slow directory
-- **Error Recovery**: Failed tasks are tracked and can be retried
-- **Structured Output**: All results are captured in structured markdown files
-- **Claude Code Integration**: Seamless integration with Claude Code's TodoRead/TodoWrite functionality
-- **Todo Synchronization**: Bidirectional sync between Claude Code todos and directive execution
-
-## API Configuration
-
-### Development and Testing
-
-```bash
-# Run tests
-pytest
-
-# Run tests with coverage
-pytest --cov=agents --cov=lib
-
-# Format code
-black agents/ lib/ tests/
-
-# Type checking
-mypy agents/ lib/
-
-# Linting
-flake8 agents/ lib/ tests/
-```
-
-### Dependencies
-
-**Python packages:**
-- `requests>=2.31.0` - HTTP client for AI API calls
-- `PyYAML>=6.0.1` - YAML parsing for directive frontmatter
-- `pytest>=7.4.0` - Testing framework
-- `black>=23.7.0` - Code formatting
-- `mypy>=1.5.0` - Static type checking
-
-**Ruby gems:**
-- `concurrent-ruby` - Parallel processing support
-
-### Environment Variables
-
-```bash
-export ANTHROPIC_API_KEY="your-claude-api-key"
-export OPENAI_API_KEY="your-openai-api-key"
-```
-
-### Supported Models
-
-**Claude (Anthropic):**
-- `claude-3-opus-20240229` - Most capable
-- `claude-3-sonnet-20240229` - Balanced performance
-- `claude-3-haiku-20240307` - Fast and efficient
-
-**OpenAI:**
-- `gpt-4` - Most capable GPT-4
-- `gpt-4-turbo` - Latest GPT-4 variant
-- `gpt-3.5-turbo` - Fast and cost-effective
-
-## CLI Reference
-
-### Directive Agent Options
-
-```bash
-./bin/computer directive [options]
-  -t, --text TEXT          Prompt text to process
-  -f, --file FILE          File containing prompt text  
-  -p, --platform PLATFORM Required platform (claude, openai)
-  -m, --model MODEL        Required model name
-```
-
-### Engage Agent Options  
-
-```bash
-./bin/computer engage [options]
-  -s, --single             Process only one directive
-  -j, --parallel THREADS   Number of parallel processing threads
-```
-
-## Project Architecture
-
-### Core Components
-
-- **Agents**: Python modules that handle task analysis and execution
-- **Templates**: Markdown templates for generating structured directives
-- **Library**: Shared Python modules for AI clients, database, security, etc.
-- **CLI**: Ruby command-line interface for user interaction
-- **Database**: SQLite database for persistent storage
-- **Directives**: Structured task files with YAML frontmatter
-
-### Design Principles
-
-- **Modularity**: Separate concerns between directive creation and execution
-- **Flexibility**: Support multiple AI platforms and models
-- **Scalability**: Parallel processing for handling multiple tasks
-- **Traceability**: Full audit trail of task processing and outcomes
-- **Extensibility**: Plugin-style architecture for new features
-
-## Claude Code Integration
-
-This system includes full integration with Claude Code's TodoRead/TodoWrite functionality. You can:
-
-- Convert Claude Code todos into structured directives
-- Process todos using AI agents with automatic status synchronization  
-- Maintain bidirectional sync between todos and directive execution
-
-For detailed integration instructions and examples, see **[CLAUDE_CODE_INTEGRATION.md](CLAUDE_CODE_INTEGRATION.md)**.
-
-### Quick Todo Integration Example
-
-```bash
-# Create directives from Claude Code todos
-./bin/computer todo create -f my_todos.json
-
-# Process with automatic status sync
-./bin/computer todo sync -f my_todos.json
-
-# View todo status
-./bin/computer todo status
-```
+- Single Ruby file containing the complete CLI browser
+- Object-oriented design with clear separation of concerns
+- No external dependencies beyond Ruby standard library
 
 ## Contributing
 
-This is an experimental AI-powered task management system inspired by the computer interfaces from Star Trek. Like the Enterprise's computer, it provides an intelligent interface for complex task management and execution.
+This is a simple, focused tool for browsing Logseq pages from the terminal. Contributions are welcome for:
 
-### Development Setup
+- Performance improvements
+- Additional navigation features
+- Better link resolution
+- Enhanced markdown parsing
+- Bug fixes and stability improvements
 
-1. Fork and clone the repository
-2. Install dependencies: `pip install -r requirements.txt`
-3. Run tests: `pytest`
-4. Follow code style: `black agents/ lib/ tests/`
+## License
 
-### Areas for Contribution
-
-- New AI platform integrations
-- Enhanced directive templates
-- Improved dependency resolution algorithms
-- Additional output formats
-- Performance optimizations
-- Documentation improvements
-
-Feel free to extend the agents, add new AI platforms, or modify the directive format to suit your workflow needs.
+This project is released into the public domain. See [LICENSE](LICENSE) for details.

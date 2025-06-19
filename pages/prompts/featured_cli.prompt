@@ -1,0 +1,156 @@
+# Logseq CLI Browser - Complete Implementation Prompt
+
+You are tasked with creating a comprehensive command-line interface (CLI) tool for browsing Logseq markdown files. This tool should provide an interactive, terminal-based interface for navigating through interconnected markdown pages with vim-style keybindings.
+
+## Core Requirements
+
+### 1. Project Structure
+- Use Ruby as the primary language
+- Create executable in `bin/logseq-browser`
+- Implement modular architecture with separate classes for:
+  - CLI interface and input handling
+  - Page parsing and link extraction
+  - Navigation history management
+  - File system operations
+  - Display rendering
+
+### 2. Navigation Features
+- **Page List View**: Display all available pages in the directory
+- **Page Content View**: Show individual page content with syntax highlighting
+- **Link Navigation**: Move cursor to navigate between wiki-style links `[[page-name]]`
+- **History Management**: Maintain breadcrumb trail of visited pages
+- **Search Functionality**: Pattern-based search within current page and across all pages
+
+### 3. Key Bindings (Vim-style)
+- `j/k` or `↓/↑`: Navigate up/down through content or page list
+- `o` or `Enter`: Open link under cursor or selected page
+- `b` or `Backspace`: Go back to previous page in history
+- `/pattern`: Search for pattern in current page
+- `n/N`: Next/previous search result
+- `g/G`: Go to top/bottom of content
+- `e`: Edit current page in default editor
+- `r`: Refresh current page (reload from disk)
+- `h` or `?`: Show help/keybinding reference
+- `:q` or `Ctrl+C`: Quit application
+
+### 4. Page Parsing Requirements
+- Extract wiki-style links: `[[Page Name]]`, `[[Page Name|Display Text]]`
+- Handle markdown links: `[Display Text](page-name.md)`
+- Support relative file paths and cross-references
+- Parse frontmatter/metadata if present
+- Handle special characters and spaces in page names
+
+### 5. Display Features
+- **Terminal-friendly formatting**: Use ANSI colors and formatting
+- **Content wrapping**: Respect terminal width
+- **Status line**: Show current page, position, and available actions
+- **Link highlighting**: Visually distinguish clickable links
+- **Search highlighting**: Highlight search matches
+- **Error handling**: Graceful display of missing pages or broken links
+
+### 6. File Operations
+- **Read-only browsing**: Safe navigation without accidental modifications
+- **Editor integration**: Launch system editor for page editing
+- **File watching**: Detect external changes to files
+- **Auto-reload**: Refresh content when files change externally
+
+### 7. Configuration and Customization
+- Support for configuration file (`.logseq-cli-config`)
+- Customizable key bindings
+- Theme/color scheme options
+- Default editor preference
+- Search case sensitivity options
+
+### 8. Error Handling and Edge Cases
+- Handle missing or broken links gracefully
+- Manage circular link references
+- Deal with permission issues
+- Handle malformed markdown
+- Provide meaningful error messages
+- Recover from crashes or invalid states
+
+### 9. Performance Considerations
+- Lazy loading of page content
+- Efficient search indexing
+- Memory management for large page collections
+- Fast startup time
+- Responsive user interface
+
+### 10. Testing and Quality Assurance
+- Unit tests for core functionality
+- Integration tests for file operations
+- Manual testing scenarios
+- Cross-platform compatibility
+- Memory leak detection
+
+## Implementation Strategy
+
+### Phase 1: Core Architecture
+1. Set up Ruby project structure with Gemfile
+2. Create basic CLI argument parsing
+3. Implement page discovery and listing
+4. Build fundamental navigation framework
+
+### Phase 2: Page Rendering
+1. Develop markdown parsing for links
+2. Implement terminal display system
+3. Add basic navigation between pages
+4. Create status line and UI elements
+
+### Phase 3: Advanced Navigation
+1. Add search functionality
+2. Implement history management
+3. Build link highlighting and cursor movement
+4. Add vim-style keybindings
+
+### Phase 4: Editor Integration
+1. Implement external editor launching
+2. Add file watching capabilities
+3. Handle editor exit and content refresh
+4. Manage concurrent access issues
+
+### Phase 5: Polish and Features
+1. Add configuration file support
+2. Implement customizable themes
+3. Add help system and documentation
+4. Performance optimization and testing
+
+## Technical Specifications
+
+### Dependencies
+- Use minimal external gems (prefer stdlib when possible)
+- Consider gems for: terminal control, file watching, markdown parsing
+- Ensure cross-platform compatibility (Windows, macOS, Linux)
+
+### File Format Support
+- Primary: `.md` markdown files
+- Secondary: `.org` files (if needed)
+- Handle both UTF-8 and ASCII encodings
+- Support various line ending formats
+
+### Terminal Requirements
+- Support ANSI color codes
+- Handle terminal resize events
+- Work with various terminal emulators
+- Minimum terminal size: 80x24 characters
+
+## Success Criteria
+
+The implementation is successful when:
+1. Users can browse through interconnected Logseq pages intuitively
+2. All specified keybindings work consistently
+3. The interface is responsive and pleasant to use
+4. Files can be edited externally and changes are reflected
+5. The tool handles edge cases gracefully
+6. Performance is acceptable for typical Logseq directories (100-1000 pages)
+
+## Deliverables
+
+1. Working Ruby CLI tool in `bin/logseq-browser`
+2. Modular Ruby classes in appropriate directory structure
+3. Gemfile with necessary dependencies
+4. Basic usage documentation
+5. Example configuration file
+6. Test suite covering core functionality
+
+Remember to prioritize user experience, reliability, and maintainability throughout the implementation process.
