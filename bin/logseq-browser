@@ -1,0 +1,563 @@
+#!/usr/bin/env ruby
+
+require 'io/console'
+require 'pathname'
+
+class LogseqBrowser
+  COLORS = {
+    normal: "\e[0m",
+    highlight: "\e[1;33m",
+    link: "\e[1;34m",
+    cursor: "\e[7m",
+    search: "\e[1;31m"
+  }.freeze
+
+  def initialize(pages_dir = 'pages')
+    @pages_dir = Pathname.new(pages_dir)
+    @pages = discover_pages
+    @history = []
+    @current_page = nil
+    @cursor_pos = 0
+    @view_mode = :list
+    @search_pattern = nil
+    @search_results = []
+    @search_index = 0
+    @content_lines = []
+    @links = []
+    @scroll_offset = 0
+  end
+
+  def run
+    setup_signal_handlers
+    clear_screen
+    display_current_view
+    
+    loop do
+      input = read_input
+      case input
+      when 'q'
+        break if handle_quit_command
+      when 'j'
+        move_cursor_down
+      when 'k'
+        move_cursor_up
+      when 'o'
+        open_current_item
+      when 'b'
+        go_back
+      when 'e'
+        edit_current_page
+      when '/'
+        start_search
+      when 'n'
+        next_search_result
+      when 'N'
+        previous_search_result
+      when 13, 10 # Enter key
+        open_current_item
+      when 27 # Escape key
+        cancel_search
+      else
+        # Handle other keys or ignore
+      end
+      
+      display_current_view
+    end
+    
+    cleanup
+  end
+
+  private
+
+  def setup_signal_handlers
+    Signal.trap('INT') do
+      cleanup
+      exit(0)
+    end
+    
+    Signal.trap('TERM') do
+      cleanup
+      exit(0)
+    end
+  end
+
+  def discover_pages
+    pages = []
+    @pages_dir.glob('**/*.md').each do |file|
+      next if file.basename.to_s.start_with?('.')
+      pages << {
+        name: file.basename('.md').to_s.gsub('_', ' '),
+        path: file,
+        relative_path: file.relative_path_from(@pages_dir)
+      }
+    end
+    pages.sort_by { |p| p[:name] }
+  end
+
+  def parse_markdown_content(file_path)
+    return [] unless file_path.exist?
+    
+    content = file_path.read
+    lines = content.split("\n")
+    parsed_lines = []
+    links = []
+    
+    lines.each_with_index do |line, index|
+      # Extract [[wiki-style]] links
+      wiki_links = line.scan(/\[\[([^\]]+)\]\]/)
+      wiki_links.each do |link_text|
+        link_name = link_text[0]
+        links << {
+          text: link_name,
+          line: index,
+          type: :wiki
+        }
+      end
+      
+      # Extract [markdown](links)
+      md_links = line.scan(/\[([^\]]+)\]\(([^)]+)\)/)
+      md_links.each do |link_text, link_url|
+        if link_url.end_with?('.md')
+          links << {
+            text: link_text,
+            target: link_url,
+            line: index,
+            type: :markdown
+          }
+        end
+      end
+      
+      parsed_lines << line
+    end
+    
+    @links = links
+    parsed_lines
+  end
+
+  def display_current_view
+    clear_screen
+    
+    case @view_mode
+    when :list
+      display_page_list
+    when :content
+      display_page_content
+    end
+    
+    display_status_line
+  end
+
+  def display_page_list
+    puts "#{COLORS[:highlight]}Logseq Pages Browser#{COLORS[:normal]}"
+    puts "#{'-' * 50}"
+    
+    visible_pages = get_visible_items(@pages)
+    
+    visible_pages.each_with_index do |page, index|
+      actual_index = @scroll_offset + index
+      prefix = actual_index == @cursor_pos ? "#{COLORS[:cursor]}> " : "  "
+      suffix = actual_index == @cursor_pos ? COLORS[:normal] : ""
+      
+      puts "#{prefix}#{page[:name]}#{suffix}"
+    end
+    
+    if @search_pattern
+      puts "\n#{COLORS[:search]}Search: #{@search_pattern}#{COLORS[:normal]}"
+      puts "#{@search_results.length} matches found" if @search_results.any?
+    end
+  end
+
+  def display_page_content
+    return unless @current_page
+    
+    puts "#{COLORS[:highlight]}#{@current_page[:name]}#{COLORS[:normal]}"
+    puts "#{'-' * 50}"
+    
+    visible_lines = get_visible_items(@content_lines)
+    
+    visible_lines.each_with_index do |line, index|
+      actual_index = @scroll_offset + index
+      display_line = highlight_links_in_line(line, actual_index)
+      
+      if actual_index == @cursor_pos
+        puts "#{COLORS[:cursor]}#{display_line}#{COLORS[:normal]}"
+      else
+        puts display_line
+      end
+    end
+    
+    if @search_pattern
+      puts "\n#{COLORS[:search]}Search: #{@search_pattern}#{COLORS[:normal]}"
+      puts "#{@search_results.length} matches found" if @search_results.any?
+    end
+  end
+
+  def highlight_links_in_line(line, line_index)
+    display_line = line.dup
+    
+    # Highlight [[wiki-style]] links
+    display_line.gsub!(/\[\[([^\]]+)\]\]/) do |match|
+      link_text = $1
+      if has_link_at_line?(line_index)
+        "#{COLORS[:link]}[[#{link_text}]]#{COLORS[:normal]}"
+      else
+        match
+      end
+    end
+    
+    # Highlight [markdown](links)
+    display_line.gsub!(/\[([^\]]+)\]\(([^)]+)\)/) do |match|
+      link_text = $1
+      link_url = $2
+      if link_url.end_with?('.md') && has_link_at_line?(line_index)
+        "#{COLORS[:link]}[#{link_text}](#{link_url})#{COLORS[:normal]}"
+      else
+        match
+      end
+    end
+    
+    # Highlight search matches
+    if @search_pattern
+      display_line.gsub!(/#{Regexp.escape(@search_pattern)}/i) do |match|
+        "#{COLORS[:search]}#{match}#{COLORS[:normal]}"
+      end
+    end
+    
+    display_line
+  end
+
+  def has_link_at_line?(line_index)
+    @links.any? { |link| link[:line] == line_index }
+  end
+
+  def display_status_line
+    puts "\n#{'-' * 50}"
+    case @view_mode
+    when :list
+      puts "j/k: navigate, o/Enter: open, /: search, :q: quit"
+    when :content
+      puts "j/k: navigate, o/Enter: follow link, b: back, e: edit, /: search, :q: quit"
+    end
+  end
+
+  def get_visible_items(items)
+    terminal_height = IO.console.winsize[0] - 6 # Reserve space for header and status
+    
+    if items.length <= terminal_height
+      @scroll_offset = 0
+      return items
+    end
+    
+    # Adjust scroll offset to keep cursor visible
+    if @cursor_pos < @scroll_offset
+      @scroll_offset = @cursor_pos
+    elsif @cursor_pos >= @scroll_offset + terminal_height
+      @scroll_offset = @cursor_pos - terminal_height + 1
+    end
+    
+    start_index = [@scroll_offset, 0].max
+    end_index = [start_index + terminal_height - 1, items.length - 1].min
+    
+    items[start_index..end_index]
+  end
+
+  def move_cursor_down
+    max_pos = case @view_mode
+              when :list
+                @pages.length - 1
+              when :content
+                @content_lines.length - 1
+              end
+    
+    @cursor_pos = [@cursor_pos + 1, max_pos].min
+  end
+
+  def move_cursor_up
+    @cursor_pos = [@cursor_pos - 1, 0].max
+  end
+
+  def open_current_item
+    case @view_mode
+    when :list
+      open_page(@pages[@cursor_pos])
+    when :content
+      follow_link_at_cursor
+    end
+  end
+
+  def open_page(page)
+    return unless page
+    
+    @history << @current_page if @current_page
+    @current_page = page
+    @content_lines = parse_markdown_content(page[:path])
+    @view_mode = :content
+    @cursor_pos = 0
+    @scroll_offset = 0
+    @search_pattern = nil
+    @search_results = []
+  end
+
+  def follow_link_at_cursor
+    link = @links.find { |l| l[:line] == @cursor_pos }
+    return unless link
+    
+    target_page = find_page_by_name(link[:text])
+    unless target_page
+      target_page = create_page(link[:text])
+    end
+    
+    open_page(target_page)
+  end
+
+  def find_page_by_name(name)
+    normalized_name = name.downcase.gsub(/[^a-z0-9]/, '')
+    @pages.find do |page|
+      page_normalized = page[:name].downcase.gsub(/[^a-z0-9]/, '')
+      page_normalized == normalized_name
+    end
+  end
+
+  def create_page(name)
+    # Convert name to filename format
+    filename = name.gsub(/[^a-zA-Z0-9\s-]/, '').gsub(/\s+/, '_').downcase
+    file_path = @pages_dir / "#{filename}.md"
+    
+    # Create initial content
+    initial_content = "# #{name}\n\n"
+    
+    # Write the file
+    file_path.write(initial_content)
+    
+    # Create page entry
+    new_page = {
+      name: name,
+      path: file_path,
+      relative_path: file_path.relative_path_from(@pages_dir)
+    }
+    
+    # Add to pages list and sort
+    @pages << new_page
+    @pages.sort_by! { |p| p[:name] }
+    
+    new_page
+  end
+
+  def go_back
+    return if @history.empty?
+    
+    @current_page = @history.pop
+    
+    if @current_page
+      @content_lines = parse_markdown_content(@current_page[:path])
+      @view_mode = :content
+    else
+      @view_mode = :list
+    end
+    
+    @cursor_pos = 0
+    @scroll_offset = 0
+    @search_pattern = nil
+    @search_results = []
+  end
+
+  def edit_current_page
+    return unless @current_page && @view_mode == :content
+    
+    editor = ENV['EDITOR'] || 'vim'
+    system("#{editor} #{@current_page[:path]}")
+    
+    # Refresh content after editing
+    @content_lines = parse_markdown_content(@current_page[:path])
+    @links = []
+    parse_markdown_content(@current_page[:path]) # This populates @links
+  end
+
+  def start_search
+    print "\n#{COLORS[:search]}Search: #{COLORS[:normal]}"
+    STDOUT.flush
+    pattern = ""
+    
+    loop do
+      begin
+        char = read_char
+        case char
+        when 13, 10 # Enter
+          break
+        when 127, 8 # Backspace
+          unless pattern.empty?
+            pattern = pattern[0..-2]
+            print "\b \b"
+            STDOUT.flush
+          end
+        when 27 # Escape
+          pattern = ""
+          break
+        when 3 # Ctrl+C
+          cleanup
+          exit(0)
+        else
+          if char.is_a?(String) && char.ord >= 32 && char.ord <= 126 # Printable characters
+            pattern += char
+            print char
+            STDOUT.flush
+          end
+        end
+      rescue Interrupt
+        cleanup
+        exit(0)
+      end
+    end
+    
+    if pattern.empty?
+      @search_pattern = nil
+      @search_results = []
+    else
+      @search_pattern = pattern
+      perform_search
+    end
+  end
+
+  def perform_search
+    @search_results = []
+    
+    case @view_mode
+    when :list
+      @pages.each_with_index do |page, index|
+        if page[:name].downcase.include?(@search_pattern.downcase)
+          @search_results << index
+        end
+      end
+    when :content
+      @content_lines.each_with_index do |line, index|
+        if line.downcase.include?(@search_pattern.downcase)
+          @search_results << index
+        end
+      end
+    end
+    
+    @search_index = 0
+    jump_to_search_result if @search_results.any?
+  end
+
+  def next_search_result
+    return if @search_results.empty?
+    
+    @search_index = (@search_index + 1) % @search_results.length
+    jump_to_search_result
+  end
+
+  def previous_search_result
+    return if @search_results.empty?
+    
+    @search_index = (@search_index - 1) % @search_results.length
+    jump_to_search_result
+  end
+
+  def jump_to_search_result
+    return if @search_results.empty?
+    
+    @cursor_pos = @search_results[@search_index]
+  end
+
+  def cancel_search
+    @search_pattern = nil
+    @search_results = []
+    @search_index = 0
+  end
+
+  def handle_quit_command
+    if @view_mode == :content
+      @view_mode = :list
+      @current_page = nil
+      @cursor_pos = 0
+      @scroll_offset = 0
+      @search_pattern = nil
+      @search_results = []
+      false # Don't quit, just return to list
+    else
+      true # Quit the application
+    end
+  end
+
+  def read_input
+    begin
+      char = read_char
+      
+      if char == ':'
+        print "\n:"
+        STDOUT.flush
+        command = ""
+        
+        loop do
+          begin
+            char = read_char
+            case char
+            when 13, 10 # Enter
+              break
+            when 127, 8 # Backspace
+              unless command.empty?
+                command = command[0..-2]
+                print "\b \b"
+                STDOUT.flush
+              end
+            when 27 # Escape
+              command = ""
+              break
+            when 3 # Ctrl+C
+              cleanup
+              exit(0)
+            else
+              if char.is_a?(String) && char.ord >= 32 && char.ord <= 126
+                command += char
+                print char
+                STDOUT.flush
+              end
+            end
+          rescue Interrupt
+            cleanup
+            exit(0)
+          end
+        end
+        
+        return command
+      end
+      
+      char
+    rescue Interrupt
+      cleanup
+      exit(0)
+    end
+  end
+
+  def read_char
+    begin
+      STDIN.getch
+    rescue Interrupt
+      cleanup
+      exit(0)
+    end
+  end
+
+  def clear_screen
+    print "\e[2J\e[H"
+  end
+
+  def cleanup
+    puts "\nGoodbye!"
+  end
+end
+
+# Main execution
+if __FILE__ == $0
+  pages_dir = ARGV[0] || 'pages'
+  
+  unless Dir.exist?(pages_dir)
+    puts "Error: Directory '#{pages_dir}' does not exist."
+    puts "Usage: #{$0} [pages_directory]"
+    exit 1
+  end
+  
+  browser = LogseqBrowser.new(pages_dir)
+  browser.run
+end
