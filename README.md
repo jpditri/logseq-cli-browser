@@ -77,6 +77,7 @@ LOGSEQ_CLI_THEME=gothic LOGSEQ_CLI_NO_PORTRAIT=1 ./bin/logseq-browser /path/to/y
 - `j/k` - Navigate up/down through pages
 - `o` or `Enter` - Open selected page
 - `:q` - Quit application
+- `T` - Open theme selection popup
 
 **Page Content View:**
 - `j/k` - Navigate up/down through content lines
@@ -84,12 +85,14 @@ LOGSEQ_CLI_THEME=gothic LOGSEQ_CLI_NO_PORTRAIT=1 ./bin/logseq-browser /path/to/y
 - `b` - Go back to previous page
 - `e` - Edit current page in your default editor
 - `:q` - Return to page list (or quit if already in list view)
+- `T` - Open theme selection popup (change UI theme)
 
 
 ### Chat Commands
 
-- `:chat` - enter interactive chat prompt (conversation panel below or on right)
-- Prefix your message with `/insert ` to have the AI response inserted at the current cursor location; otherwise the response is displayed in the chat panel only.
+- `:chat` - open interactive chat popup (with portrait animation and conversation history)
+- `:theme` - open theme selection popup to switch themes interactively
+- Prefix your message with `/insert ` to have the AI response inserted at the current cursor location; otherwise the response is only displayed in the chat popup.
 
 ### Environment Variables
 

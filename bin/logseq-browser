@@ -119,6 +119,8 @@ class LogseqBrowser
           go_back
         when 'e'
           edit_current_page
+        when 'theme', 'T'
+          show_theme_menu
         when 13, 10 # Enter key
           open_current_item
         else
@@ -412,6 +414,118 @@ class LogseqBrowser
     puts bottom
   end
 
+  def show_theme_menu
+    return unless console_available?
+    rows, cols = IO.console.winsize
+    menu_items = THEMES.keys
+    selected = menu_items.index(SELECTED_THEME) || 0
+    height = menu_items.size + 4
+    width = menu_items.map(&:length).max + 4
+    top = (rows - height) / 2
+    left = (cols - width) / 2
+    loop do
+      (0...height).each do |i|
+        print "\e[#{top + i};#{left}H"
+        if i == 0
+          print COLORS[:accent] + "┌" + "─" * (width - 2) + "┐" + COLORS[:normal]
+        elsif i == height - 1
+          print COLORS[:accent] + "└" + "─" * (width - 2) + "┘" + COLORS[:normal]
+        elsif i == 1
+          title = " Select Theme "
+          print COLORS[:highlight] + "│" + title.center(width - 2) + "│" + COLORS[:normal]
+        else
+          idx = i - 2
+          break unless menu_items[idx]
+          if idx == selected
+            label = COLORS[:cursor] + menu_items[idx].ljust(width - 2) + COLORS[:normal]
+          else
+            label = menu_items[idx].ljust(width - 2)
+          end
+          print COLORS[:accent] + "│" + COLORS[:normal] + label + COLORS[:accent] + "│" + COLORS[:normal]
+        end
+      end
+      STDOUT.flush
+      c = read_char
+      case c
+      when 'j'
+        selected = (selected + 1) % menu_items.size
+      when 'k'
+        selected = (selected - 1) % menu_items.size
+      when 13, 10
+        change_theme(menu_items[selected])
+        break
+      when 'q', "\e"
+        break
+      end
+    end
+    clear_screen
+  end
+
+  def change_theme(theme)
+    return unless THEMES.key?(theme)
+    Object.send(:remove_const, :SELECTED_THEME)
+    Object.const_set(:SELECTED_THEME, theme)
+    Object.send(:remove_const, :COLORS)
+    Object.const_set(:COLORS, THEMES[theme])
+    @portrait_frames = load_portrait_frames
+    @portrait_frame_index = 0
+    @banner_frames = load_banner_frames
+    @banner_frame_index = 0
+  end
+
+  # Render portrait frames and chat history inside a bordered popup overlay
+  def show_chat_popup(left_width:, width:)
+    return unless console_available?
+    rows, cols = IO.console.winsize
+    hud_height = 3
+    status_height = 3
+    available_h = rows - hud_height - status_height
+    portrait_h = (!NO_PORTRAIT && @portrait_frames.any?) ? @portrait_height : 0
+    divider_h = portrait_h > 0 ? 1 : 0
+    border_h = 2
+    max_chat_h = [available_h - portrait_h - divider_h - border_h, 0].max
+    # Prepare chat lines without ANSI codes
+    history_lines = @conversation_history.map do |entry|
+      prefix = entry[:who] == :user ? 'You: ' : "#{PERSONAS[SELECTED_THEME][:icon]}#{PERSONAS[SELECTED_THEME][:name]}: "
+      (prefix + entry[:text]).gsub(/\e\[[0-9;]*m/, '')
+    end
+    visible = history_lines.last(max_chat_h)
+    popup_h = portrait_h + divider_h + visible.size + border_h
+    inner_w = width - 2
+    top = hud_height + 1
+    left = left_width + 1
+    # Draw popup border and blank interior
+    (0...popup_h).each do |i|
+      y = top + i
+      print "\e[#{y};#{left}H"
+      if i == 0
+        print COLORS[:accent] + '┌' + '─' * inner_w + '┐' + COLORS[:normal]
+      elsif i == popup_h - 1
+        print COLORS[:accent] + '└' + '─' * inner_w + '┘' + COLORS[:normal]
+      else
+        print COLORS[:accent] + '│' + COLORS[:normal] + ' ' * inner_w + COLORS[:accent] + '│' + COLORS[:normal]
+      end
+    end
+    # Draw portrait frames centered within popup
+    if portrait_h > 0
+      frame = @portrait_frames[@portrait_frame_index] || []
+      frame.each_with_index do |line, idx|
+        y = top + 1 + idx
+        x = left + 1 + [(inner_w - line.length) / 2, 0].max
+        print "\e[#{y};#{x}H#{COLORS[:accent]}#{line}#{COLORS[:normal]}"
+      end
+      @portrait_frame_index = (@portrait_frame_index + 1) % @portrait_frames.size
+      # Divider between portrait and chat
+      y = top + 1 + portrait_h
+      print "\e[#{y};#{left}H#{COLORS[:accent]}├#{'─' * inner_w}┤#{COLORS[:normal]}"
+    end
+    # Render chat history lines
+    visible.each_with_index do |ln, idx|
+      y = top + portrait_h + divider_h + 1 + idx
+      print "\e[#{y};#{left + 1}H#{COLORS[:normal]}#{ln.ljust(inner_w)}"
+    end
+  end
+
   def discover_pages
     pages = []
     @pages_dir.glob('**/*.md').each do |file|
@@ -483,14 +597,13 @@ class LogseqBrowser
         display_page_content
       end
 
-      # Portrait + chat panel (chat always shown)
+      # Portrait + chat popup (chat always shown in bordered overlay)
       if console_available?
         rows, cols = IO.console.winsize
         if cols >= 180 && !NO_PORTRAIT && @portrait_width > 0
-          render_portrait_column
-          render_chat_panel(left_width: cols - @portrait_width, width: @portrait_width)
+          show_chat_popup(left_width: cols - @portrait_width, width: @portrait_width)
         else
-          render_chat_panel(left_width: 0, width: cols)
+          show_chat_popup(left_width: 0, width: cols)
         end
       end
 
