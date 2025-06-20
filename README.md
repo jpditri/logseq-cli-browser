@@ -15,6 +15,19 @@ This project provides a terminal-based browser for navigating through Logseq mar
 - **History Navigation**: Use `b` to go back through visited pages
 - **File Editing**: Press `e` to edit the current page in your preferred editor
 - **Terminal Optimized**: Responsive interface that adapts to terminal size
+- **Neon Cassette Futurism UI**: Retro-futuristic, hacker-style terminal interface inspired by cassette futurism aesthetics.
+- **Matrix Theme**: Green-on-black color scheme with optional "falling code" animations for that "let's hack the planet" vibe.
+- **Gothic Library UI**: Candlelit, ominous typewriter-style color scheme evoking Poe’s writing desk or Hunter S. Thompson’s study.
+- **Startup Splash & Quotes**: Theme-specific ASCII art banners and random witty quotes on launch
+- **Animated Intros**: Confetti for cassette, falling code for matrix, cryptic effects for gothic themes
+- **Top HUD Panel**: Always-visible header with time, theme, and context information (current file or page directory)
+- **Chat Persona**: Distinctive AI persona name and icon per theme for more personality
+
+## Themes
+
+- **cassette** — Neon‑magenta cassette‑futurism UI (default)
+- **matrix** — Green‑on‑black code rain animation
+- **gothic** — Candlelit, ominous library/typewriter palette
 
 ## Installation
 
@@ -42,11 +55,20 @@ chmod +x bin/logseq-browser
 ### Basic Navigation
 
 ```bash
-# Navigate pages in the current 'pages' directory
+# Default (cassette theme):
 ./bin/logseq-browser
 
-# Navigate pages in a specific directory
-./bin/logseq-browser /path/to/your/pages
+# Matrix theme (falling code animation):
+./bin/logseq-browser --theme=matrix
+
+# Gothic Library theme (candlelit, ominous look):
+./bin/logseq-browser --theme=gothic
+
+# Suppress portrait (chat-only mode):
+./bin/logseq-browser --no-portrait
+
+# Or via environment variable:
+LOGSEQ_CLI_THEME=gothic LOGSEQ_CLI_NO_PORTRAIT=1 ./bin/logseq-browser /path/to/your/pages
 ```
 
 ### Key Bindings
@@ -62,6 +84,12 @@ chmod +x bin/logseq-browser
 - `b` - Go back to previous page
 - `e` - Edit current page in your default editor
 - `:q` - Return to page list (or quit if already in list view)
+
+
+### Chat Commands
+
+- `:chat` - enter interactive chat prompt (conversation panel below or on right)
+- Prefix your message with `/insert ` to have the AI response inserted at the current cursor location; otherwise the response is displayed in the chat panel only.
 
 ### Environment Variables
 

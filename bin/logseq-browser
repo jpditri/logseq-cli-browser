@@ -2,14 +2,72 @@
 
 require 'io/console'
 require 'pathname'
+require 'optparse'
+
+# Define UI themes
+THEMES = {
+  'cassette' => {
+    normal: "\e[0m",
+    highlight: "\e[1;95m",
+    link: "\e[4;1;96m",
+    cursor: "\e[7m",
+    accent: "\e[1;93m",
+  },
+  'matrix' => {
+    normal:    "\e[0m",
+    highlight: "\e[1;32m",
+    link:      "\e[4;1;32m",
+    cursor:    "\e[7m",
+    accent:    "\e[2;32m",
+  },
+  'gothic' => {
+    normal:    "\e[0m",
+    highlight: "\e[1;33m", # candlelit yellow
+    link:      "\e[4;36m", # underlined cyan for index-like links
+    cursor:    "\e[7m",
+    accent:    "\e[2;31m", # dim red for ominous accents
+  },
+}.freeze
+
+options = {
+  theme: ENV['LOGSEQ_CLI_THEME'] || 'cassette',
+  no_portrait: ENV['LOGSEQ_CLI_NO_PORTRAIT'] == '1'
+}
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [options] [pages_directory]"
+  opts.on("-tNAME", "--theme=NAME", "Theme to use (#{THEMES.keys.join(', ')})") { |t| options[:theme] = t }
+  opts.on("--no-portrait", "Suppress the animated portrait pane") { options[:no_portrait] = true }
+end.parse!
+
+theme = options[:theme]
+unless THEMES.key?(theme)
+  puts "Unknown theme '#{theme}'. Available themes: #{THEMES.keys.join(', ')}"
+  exit 1
+end
+
+SELECTED_THEME = theme
+COLORS = THEMES[theme]
+NO_PORTRAIT = options[:no_portrait]
+ 
+# Random startup quotes to add personality
+QUOTES = [
+  "Ready to rock the logseqiverse!",
+  "Carpe Diem, seize the day!",
+  "All your notes are belong to us.",
+  "Let the hacking commence.",
+  "May your blocks always connect.",
+  "Time flies like an arrow; logs like a pineapple.",
+  "In the shadows of code, we find truth.",
+].freeze
+
+# Chat persona names and icons per theme
+PERSONAS = {
+  'cassette' => { name: 'Cassie', icon: '💾' },
+  'matrix'   => { name: 'Neo',    icon: '🌐' },
+  'gothic'   => { name: 'Edgar',  icon: '🦇' },
+}.freeze
 
 class LogseqBrowser
-  COLORS = {
-    normal: "\e[0m",
-    highlight: "\e[1;33m",
-    link: "\e[1;34m",
-    cursor: "\e[7m",
-  }.freeze
 
   def initialize(pages_dir = 'pages')
     @pages_dir = Pathname.new(pages_dir)
@@ -21,35 +79,57 @@ class LogseqBrowser
     @content_lines = []
     @links = []
     @scroll_offset = 0
+
+    # Portrait frames for right‑hand animation
+    @portrait_frames = load_portrait_frames
+    @portrait_frame_index = 0
+    @portrait_height = @portrait_frames.first ? @portrait_frames.first.size : 0
+    @portrait_width  = @portrait_frames.first ? @portrait_frames.first.map(&:length).max : 0
+
+    # Chat conversation history
+    @conversation_history = []
+    # Startup banners for per-theme splash
+    @banner_frames = load_banner_frames
+    @banner_frame_index = 0
   end
 
   def run
     setup_signal_handlers
+    display_startup_screen
     clear_screen
     display_current_view
     
     loop do
-      input = read_input
-      case input
-      when 'q'
-        break if handle_quit_command
-      when 'j'
-        move_cursor_down
-      when 'k'
-        move_cursor_up
-      when 'o'
-        open_current_item
-      when 'b'
-        go_back
-      when 'e'
-        edit_current_page
-      when 13, 10 # Enter key
-        open_current_item
-      else
-        # Handle other keys or ignore
+      begin
+        input = read_input
+        next unless input # Skip if input reading failed
+        
+        case input
+        when 'q'
+          break if handle_quit_command
+        when 'chat'
+          enter_chat_mode
+        when 'j'
+          move_cursor_down
+        when 'k'
+          move_cursor_up
+        when 'o'
+          open_current_item
+        when 'b'
+          go_back
+        when 'e'
+          edit_current_page
+        when 13, 10 # Enter key
+          open_current_item
+        else
+          # Handle other keys or ignore
+        end
+        
+        display_current_view
+      rescue => e
+        puts "\n#{COLORS[:accent]}Error: #{e.message}#{COLORS[:normal]}"
+        sleep 1
       end
-      
-      display_current_view
     end
     
     cleanup
@@ -67,6 +147,269 @@ class LogseqBrowser
       cleanup
       exit(0)
     end
+  end
+
+  # Load ASCII portrait frames from assets/faces/<theme>
+  def load_portrait_frames
+    begin
+      frames_dir = File.expand_path("../../assets/faces/#{SELECTED_THEME}", __FILE__)
+      return [] unless Dir.exist?(frames_dir)
+      
+      Dir.glob(File.join(frames_dir, '*.txt')).sort.map do |f|
+        begin
+          File.read(f).split("\n")
+        rescue => e
+          puts "Warning: Could not read portrait frame #{f}: #{e.message}"
+          []
+        end
+      end.reject(&:empty?)
+    rescue => e
+      puts "Warning: Could not load portrait frames: #{e.message}"
+      []
+    end
+  end
+
+  # Render chat panel method placeholder
+
+  # Render the current portrait frame in the right‑hand pane
+  def render_portrait_column
+    begin
+      return unless console_available?
+      
+      rows, cols = IO.console.winsize
+      left_width = cols - @portrait_width
+      frame = @portrait_frames[@portrait_frame_index] || []
+      
+      frame.each_with_index do |line, idx|
+        print "\e[#{idx+1};#{left_width+1}H"
+        print "#{COLORS[:accent]}#{line.ljust(@portrait_width)}#{COLORS[:normal]}"
+      end
+      
+      @portrait_frame_index = (@portrait_frame_index + 1) % @portrait_frames.size if @portrait_frames.any?
+    rescue => e
+      # Silently continue if portrait rendering fails
+    end
+  end
+
+  # Render the Pokémon‑style chat box in the right‑hand pane or full width
+  def render_chat_panel(left_width:, width:)
+
+  # Engage in a chat turn: read user input, call AI, display reply, optionally insert
+  def enter_chat_mode
+    begin
+      print "\n#{COLORS[:highlight]}Chat> #{COLORS[:normal]}"
+      STDOUT.flush
+      user_input = STDIN.gets&.chomp
+      return if user_input.to_s.strip.empty?
+
+      should_insert = user_input.strip.start_with?('/insert')
+      prompt = should_insert ? user_input.sub(%r{\A/insert\s*}, '') : user_input
+
+      @conversation_history << { who: :user, text: prompt }
+
+      # Build context for AI
+      file_ctx = {
+        path: @current_page ? @current_page[:path].to_s : nil,
+        buffer: @content_lines.join("\n"),
+        cursor_line: @cursor_pos,
+        scroll_offset: @scroll_offset
+      }
+
+      # Call AI with error handling
+      begin
+        bot_reply = call_ai(prompt, file_ctx)
+        @conversation_history << { who: :bot, text: bot_reply }
+        insert_text_at_cursor(bot_reply) if should_insert
+      rescue => e
+        error_msg = "Error calling AI: #{e.message}"
+        @conversation_history << { who: :bot, text: error_msg }
+        puts "\n#{COLORS[:accent]}#{error_msg}#{COLORS[:normal]}"
+      end
+    rescue => e
+      puts "\n#{COLORS[:accent]}Chat error: #{e.message}#{COLORS[:normal]}"
+    end
+  end
+
+  # Placeholder AI call - replace with real integration
+  def call_ai(prompt, context)
+    # TODO: integrate with Claude/Codex API using `prompt` and `context`
+    # For now, return a safe placeholder response
+    begin
+      # Simulate potential AI service call
+      raise "AI service not configured" if ENV['AI_API_KEY'].nil?
+      "[AI reply to: #{prompt}]"
+    rescue => e
+      raise "AI integration error: #{e.message}"
+    end
+  end
+
+  # Insert given text at cursor position in the current buffer and write file
+  def insert_text_at_cursor(text)
+    begin
+      return unless text && !text.strip.empty?
+      
+      lines = text.lines.map(&:chomp)
+      @content_lines.insert(@cursor_pos, *lines)
+      
+      if @current_page && @current_page[:path]
+        File.write(@current_page[:path], @content_lines.join("\n"))
+      end
+    rescue => e
+      puts "\n#{COLORS[:accent]}Error inserting text: #{e.message}#{COLORS[:normal]}"
+    end
+  end
+    rows, cols = IO.console.winsize
+    # Determine panel top (below portrait) and height (above status line)
+    panel_top = @portrait_height + 1
+    # Leave space for status border and commands (3 lines)
+    panel_height = rows - panel_top - 3
+
+    # Build border
+    inner_width = width - 2
+    top_border = "#{COLORS[:accent]}┌#{'─' * inner_width}┐#{COLORS[:normal]}"
+    bottom_border = "#{COLORS[:accent]}└#{'─' * inner_width}┘#{COLORS[:normal]}"
+
+    # Collect history lines, truncate/pad
+    history_lines = @conversation_history.map do |entry|
+      if entry[:who] == :user
+        prefix = 'You: '
+      else
+        persona = PERSONAS[SELECTED_THEME] || { icon: '', name: 'AI' }
+        prefix = "#{persona[:icon]}#{persona[:name]}: "
+      end
+      text = (prefix + entry[:text]).gsub(/\e\[[0-9;]*m/, '')
+      text[0, inner_width].ljust(inner_width)
+    end
+    visible = history_lines.last(panel_height)
+
+    # Assemble panel lines
+    panel_lines = [top_border]
+    visible.each { |ln| panel_lines << "#{COLORS[:normal]}│#{ln}│" }
+    # Pad empty lines
+    (panel_height - visible.size).times do
+      panel_lines << "#{COLORS[:normal]}│#{' ' * inner_width}│"
+    end
+    panel_lines << bottom_border
+
+    # Print at right-hand side
+    panel_lines.each_with_index do |ln, idx|
+      print "\e[#{panel_top + idx};#{left_width + 1}H#{ln}"
+    end
+  end
+
+  # Load ASCII portrait frames from assets/faces/<theme>
+  def load_portrait_frames
+    begin
+      frames_dir = File.expand_path("../../assets/faces/#{SELECTED_THEME}", __FILE__)
+      return [] unless Dir.exist?(frames_dir)
+      
+      Dir.glob(File.join(frames_dir, '*.txt')).sort.map do |f|
+        begin
+          File.read(f).split("\n")
+        rescue => e
+          puts "Warning: Could not read portrait frame #{f}: #{e.message}"
+          []
+        end
+      end.reject(&:empty?)
+    rescue => e
+      puts "Warning: Could not load portrait frames: #{e.message}"
+      []
+    end
+  end
+
+  # Load ASCII banner frames from assets/banners/<theme> for splash screen
+  def load_banner_frames
+    begin
+      dir = File.expand_path("../../assets/banners/#{SELECTED_THEME}", __FILE__)
+      return [] unless Dir.exist?(dir)
+
+      Dir.glob(File.join(dir, '*.txt')).sort.map do |f|
+        File.read(f).split("\n") rescue []
+      end.reject(&:empty?)
+    rescue
+      []
+    end
+  end
+
+  # Display startup splash with theme banner, quote, and effect
+  def display_startup_screen
+    return unless console_available?
+    clear_screen
+    rows, cols = IO.console.winsize
+
+    # Show banner (external frames or fallback)
+    banner = @banner_frames.any? ? @banner_frames.first : []
+    if banner.any?
+      banner.each do |line|
+        pad = [(cols - line.length) / 2, 0].max
+        print ' ' * pad
+        puts "#{COLORS[:highlight]}#{line}#{COLORS[:normal]}"
+      end
+    else
+      render_banner
+    end
+
+    # Random quote
+    quote = QUOTES.sample
+    pad = [(cols - quote.length) / 2, 0].max
+    print '\n' + ' ' * pad
+    puts "#{COLORS[:accent]}" + quote + "#{COLORS[:normal]}"
+
+    # Theme-specific intro effect
+    case SELECTED_THEME
+    when 'matrix'
+      animate_matrix_rain
+    when 'cassette'
+      display_confetti(cols)
+    when 'gothic'
+      display_gothic_effect(cols)
+    end
+
+    sleep 1.2
+  end
+
+  # Simple confetti effect for cassette theme
+  def display_confetti(width)
+    3.times do
+      print COLORS[:accent]
+      width.times { print ['*', '+', 'o', '@'].sample }
+      puts COLORS[:normal]
+      sleep 0.05
+    end
+  end
+
+
+  # Gothic-style cryptic effect for gothic theme
+  def display_gothic_effect(width)
+    3.times do
+      print COLORS[:accent]
+      width.times { print ['+', '†', '|', '/'].sample }
+      puts COLORS[:normal]
+      sleep 0.05
+    end
+  end
+
+  # Render top HUD panel with current time, theme, and context info
+  def render_hud_panel
+    return unless console_available?
+    rows, cols = IO.console.winsize
+    info = if @view_mode == :list
+             "Dir: #{@pages_dir} | Pages: #{@pages.size}"
+           else
+             path = @current_page ? @current_page[:relative_path] : ''
+             lines = @content_lines.size
+             pos = @cursor_pos + 1
+             "File: #{path} | Line: #{pos}/#{lines}"
+           end
+    time_str = Time.now.strftime('%Y-%m-%d %H:%M:%S')
+    header = " Time: #{time_str} | Theme: #{SELECTED_THEME} | #{info} "
+    # Draw box around HUD
+    top = COLORS[:accent] + '┏' + '━' * (cols - 2) + '┓' + COLORS[:normal]
+    middle = COLORS[:highlight] + '┃' + COLORS[:normal] + header.center(cols - 2) + COLORS[:highlight] + '┃' + COLORS[:normal]
+    bottom = COLORS[:accent] + '┗' + '━' * (cols - 2) + '┛' + COLORS[:normal]
+    puts top
+    puts middle
+    puts bottom
   end
 
   def discover_pages
@@ -123,21 +466,57 @@ class LogseqBrowser
   end
 
   def display_current_view
-    clear_screen
-    
-    case @view_mode
-    when :list
-      display_page_list
-    when :content
-      display_page_content
+    begin
+      clear_screen
+      render_hud_panel
+
+      # Matrix theme animation only when wide and portrait enabled
+      if console_available?
+        rows, cols = IO.console.winsize
+        animate_matrix_rain if cols >= 180 && !NO_PORTRAIT && SELECTED_THEME == 'matrix'
+      end
+
+      case @view_mode
+      when :list
+        display_page_list
+      when :content
+        display_page_content
+      end
+
+      # Portrait + chat panel (chat always shown)
+      if console_available?
+        rows, cols = IO.console.winsize
+        if cols >= 180 && !NO_PORTRAIT && @portrait_width > 0
+          render_portrait_column
+          render_chat_panel(left_width: cols - @portrait_width, width: @portrait_width)
+        else
+          render_chat_panel(left_width: 0, width: cols)
+        end
+      end
+
+      display_status_line
+    rescue => e
+      puts "Display error: #{e.message}"
     end
-    
-    display_status_line
+  end
+
+  def render_banner
+    puts "#{COLORS[:highlight]}    .------.      .------.#{COLORS[:normal]}"
+    puts "#{COLORS[:highlight]}    |  ○   |      |  ○   |#{COLORS[:normal]}"
+    puts "#{COLORS[:highlight]}    |      |      |      |#{COLORS[:normal]}"
+    puts "#{COLORS[:highlight]}    '------'      '------'#{COLORS[:normal]}"
+    puts "#{COLORS[:link]}===[ #{COLORS[:highlight]}LOGSEQ CLI BROWSER#{COLORS[:link]} ]===#{COLORS[:normal]}"
   end
 
   def display_page_list
-    puts "#{COLORS[:highlight]}Logseq Pages Browser#{COLORS[:normal]}"
-    puts "#{'-' * 50}"
+    render_banner
+    
+    if console_available?
+      width = IO.console.winsize[1]
+      puts "#{COLORS[:accent]}#{'─' * width}#{COLORS[:normal]}"
+    else
+      puts "#{COLORS[:accent]}#{'─' * 80}#{COLORS[:normal]}"
+    end
     
     visible_pages = get_visible_items(@pages)
     
@@ -154,7 +533,13 @@ class LogseqBrowser
     return unless @current_page
     
     puts "#{COLORS[:highlight]}#{@current_page[:name]}#{COLORS[:normal]}"
-    puts "#{'-' * 50}"
+    
+    if console_available?
+      width = IO.console.winsize[1]
+      puts "#{COLORS[:accent]}#{'─' * width}#{COLORS[:normal]}"
+    else
+      puts "#{COLORS[:accent]}#{'─' * 80}#{COLORS[:normal]}"
+    end
     
     visible_lines = get_visible_items(@content_lines)
     
@@ -202,33 +587,64 @@ class LogseqBrowser
   end
 
   def display_status_line
-    puts "\n#{'-' * 50}"
+    if console_available?
+      screen_width = IO.console.winsize[1]
+      puts "\n#{COLORS[:accent]}#{'─' * screen_width}#{COLORS[:normal]}"
+    else
+      puts "\n#{COLORS[:accent]}#{'─' * 80}#{COLORS[:normal]}"
+    end
+    
     case @view_mode
     when :list
-      puts "j/k: navigate, o/Enter: open, :q: quit"
+      puts "#{COLORS[:highlight]}j/k#{COLORS[:normal]}: navigate, #{COLORS[:highlight]}o/Enter#{COLORS[:normal]}: open, #{COLORS[:highlight]}:q#{COLORS[:normal]}: quit"
     when :content
-      puts "j/k: navigate, o/Enter: follow link, b: back, e: edit, :q: quit"
+      puts "#{COLORS[:highlight]}j/k#{COLORS[:normal]}: navigate, #{COLORS[:highlight]}o/Enter#{COLORS[:normal]}: follow link, #{COLORS[:highlight]}b#{COLORS[:normal]}: back, #{COLORS[:highlight]}e#{COLORS[:normal]}: edit, #{COLORS[:highlight]}:q#{COLORS[:normal]}: quit"
+    end
+  end
+
+  # Helper method to check if console is available
+  def console_available?
+    begin
+      IO.console && IO.console.winsize
+      true
+    rescue
+      false
     end
   end
 
   def get_visible_items(items)
-    terminal_height = IO.console.winsize[0] - 6 # Reserve space for header and status
-    
+    return items unless console_available?
+    rows, = IO.console.winsize
+
+    # Calculate header and status heights
+    hud_height = 3
+    status_height = 3
+    header_height = if @view_mode == :list
+                      banner_height = 5 # 4 lines of ASCII + title
+                      sep = 1
+                      hud_height + banner_height + sep
+                    else
+                      title = 1
+                      sep = 1
+                      hud_height + title + sep
+                    end
+    terminal_height = rows - header_height - status_height
+
     if items.length <= terminal_height
       @scroll_offset = 0
       return items
     end
-    
+
     # Adjust scroll offset to keep cursor visible
     if @cursor_pos < @scroll_offset
       @scroll_offset = @cursor_pos
     elsif @cursor_pos >= @scroll_offset + terminal_height
       @scroll_offset = @cursor_pos - terminal_height + 1
     end
-    
+
     start_index = [@scroll_offset, 0].max
     end_index = [start_index + terminal_height - 1, items.length - 1].min
-    
+
     items[start_index..end_index]
   end
 
@@ -356,59 +772,88 @@ class LogseqBrowser
   def read_input
     begin
       char = read_char
+      return nil unless char
       
       if char == ':'
-        print "\n:"
-        STDOUT.flush
-        command = ""
-        
-        loop do
-          begin
-            char = read_char
-            case char
-            when 13, 10 # Enter
-              break
-            when 127, 8 # Backspace
-              unless command.empty?
-                command = command[0..-2]
-                print "\b \b"
-                STDOUT.flush
+        begin
+          print "\n:"
+          STDOUT.flush
+          command = ""
+          
+          loop do
+            begin
+              char = read_char
+              return "" unless char
+              
+              case char
+              when 13, 10 # Enter
+                break
+              when 127, 8 # Backspace
+                unless command.empty?
+                  command = command[0..-2]
+                  print "\b \b"
+                  STDOUT.flush
+                end
+              when 27 # Escape
+                command = ""
+                break
+              when 3 # Ctrl+C
+                cleanup
+                exit(0)
+              else
+                if char.is_a?(String) && char.ord >= 32 && char.ord <= 126
+                  command += char
+                  print char
+                  STDOUT.flush
+                end
               end
-            when 27 # Escape
-              command = ""
-              break
-            when 3 # Ctrl+C
+            rescue Interrupt
               cleanup
               exit(0)
-            else
-              if char.is_a?(String) && char.ord >= 32 && char.ord <= 126
-                command += char
-                print char
-                STDOUT.flush
-              end
+            rescue => e
+              puts "\nError reading command input: #{e.message}"
+              return ""
             end
-          rescue Interrupt
-            cleanup
-            exit(0)
           end
+          
+          return command
+        rescue => e
+          puts "\nError in command mode: #{e.message}"
+          return ""
         end
-        
-        return command
       end
       
       char
     rescue Interrupt
       cleanup
       exit(0)
+    rescue => e
+      puts "Error reading input: #{e.message}"
+      return nil
     end
   end
 
   def read_char
     begin
+      return nil unless STDIN.tty?
       STDIN.getch
     rescue Interrupt
       cleanup
       exit(0)
+    rescue => e
+      puts "Error reading character: #{e.message}"
+      return nil
+    end
+  end
+
+  def animate_matrix_rain
+    rows, cols = IO.console.winsize
+    rain_lines = [rows / 2, 10].min
+    chars = ('a'..'z').to_a + ('0'..'9').to_a + ['@', '#', '$', '%', '&']
+    rain_lines.times do
+      line = Array.new(cols) { rand < 0.02 ? chars.sample : ' ' }.join
+      print "#{COLORS[:highlight]}#{line}#{COLORS[:normal]}\r\n"
+      sleep(0.02)
     end
   end
 
@@ -427,7 +872,7 @@ if __FILE__ == $0
   
   unless Dir.exist?(pages_dir)
     puts "Error: Directory '#{pages_dir}' does not exist."
-    puts "Usage: #{$0} [pages_directory]"
+    puts "Usage: #{$0} [options] [pages_directory]"
     exit 1
   end
   

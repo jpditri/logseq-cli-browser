@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
+codex --w ./ --full-auto --auto-edit -m codex-mini-latest --project-doc pages/auto-agents/AGENTS.md --json 
